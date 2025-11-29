@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>BookBrella デバッグツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: white;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 BookBrella デバッグツール</h1>
+
+    <div class="test-section">
+        <h2>1. データベース接続テスト</h2>
+        <button onclick="testDatabase()">データベース接続をテスト</button>
+        <div id="db-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 書籍一覧取得テスト</h2>
+        <button onclick="getBooks()">書籍一覧を取得</button>
+        <div id="books-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 書籍登録テスト</h2>
+        <button onclick="registerTestBook()">テスト書籍を登録</button>
+        <div id="register-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. SQL直接確認（コンソールで実行）</h2>
+        <pre>docker-compose exec db psql -U appuser -d appdb -c "SELECT * FROM books;"</pre>
+    </div>
+
+    <script>
+        async function testDatabase() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.textContent = 'テスト中...';
+            
+            try {
+                const response = await fetch('/api.php?action=test_db');
+                const data = await response.json();
+                
+                resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'エラー: ' + error.message;
+            }
+        }
+
+        async function getBooks() {
+            const resultDiv = document.getElementById('books-result');
+            resultDiv.textContent = '取得中...';
+            
+            try {
+                const response = await fetch('/api.php?action=get_books');
+                const data = await response.json();
+                
+                resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success) {
+                    resultDiv.textContent += '\n\n書籍数: ' + data.books.length;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'エラー: ' + error.message;
+            }
+        }
+
+        async function registerTestBook() {
+            const resultDiv = document.getElementById('register-result');
+            resultDiv.textContent = '登録中...';
+            
+            const testBook = {
+                isbn: '9784873119038',
+                title: 'デバッグテスト書籍 ' + new Date().toISOString(),
+                author: 'テスト著者',
+                genre: '技術',
+                publisher: 'テスト出版',
+                date: '2024-01-01',
+                ownerType: '会社所有',
+                location: '豊洲',
+                owner: '会社',
+                imageUrl: '',
+                description: 'これはデバッグ用のテスト書籍です'
+            };
+            
+            try {
+                const response = await fetch('/api.php?action=register_book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testBook)
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success) {
+                    resultDiv.textContent += '\n\n✅ 登録成功！書籍ID: ' + data.book.id;
+                    resultDiv.textContent += '\n\n次に、書籍一覧を取得して確認してください。';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'エラー: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

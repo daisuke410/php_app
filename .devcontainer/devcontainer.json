@@ -1,0 +1,17 @@
+{
+	"name": "PHP with PostgreSQL",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bmewburn.vscode-intelephense-client",
+				"cweijan.vscode-postgresql-client2"
+			]
+		}
+	},
+
+	"forwardPorts": [8080, 5432]
+}

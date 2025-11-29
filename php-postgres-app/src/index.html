@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookBrella - 書籍と傘の管理システム</title>        <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        :root {
+            /* 秋冬カラーパレット */
+            --autumn-burgundy: #7d3c4c;
+            --autumn-copper: #b87653;
+            --autumn-sage: #8a9a7b;
+            --autumn-clay: #c9a68a;
+            --autumn-charcoal: #3d3d3d;
+            --autumn-cream: #f4ede4;
+            --autumn-forest: #4a5d4a;
+            --autumn-rust: #a05642;
+            
+            /* Dark mode */
+            --dark-bg: #2a2520;
+            --dark-surface: #3d362f;
+            --dark-text: #f4ede4;
+            
+            /* Semantic colors */
+            --color-primary: var(--autumn-burgundy);
+            --color-secondary: var(--autumn-copper);
+            --color-accent: var(--autumn-sage);
+            --color-bg: var(--autumn-cream);
+            --color-surface: #ffffff;
+            --color-text: var(--autumn-charcoal);
+            --color-border: #d4c4b0;
+            --color-shadow: rgba(125, 60, 76, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+            background: linear-gradient(135deg, var(--autumn-cream) 0%, #e8dfd5 100%);
+            color: var(--color-text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 秋冬の装飾背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(184, 118, 83, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(138, 154, 123, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--autumn-burgundy) 0%, var(--autumn-rust) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px var(--color-shadow);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--color-surface);
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--color-border);
+        }
+
+        nav button {
+            background: transparent;
+            border: none;
+            color: var(--color-text);
+            padding: 12px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        nav button:hover {
+            background: var(--autumn-clay);
+            color: white;
+        }
+
+        nav button.active {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--color-border);
+        }
+
+        .card h2 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            border-bottom: 2px solid var(--autumn-clay);
+            padding-bottom: 10px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--autumn-charcoal);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--color-bg);
+        }
+
+        select#umbrella-color {
+            margin-bottom: 0;
+        }
+
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(125, 60, 76, 0.1);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(125, 60, 76, 0.1);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--autumn-burgundy) 0%, var(--autumn-rust) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(125, 60, 76, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--autumn-clay);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--autumn-copper);
+        }
+
+        .btn-success {
+            background: var(--autumn-sage);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--autumn-rust);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #999;
+            color: white;
+        }
+
+        /* Book Grid */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .book-item {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .book-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .book-cover {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #f8f4f0 0%, #e8dfd5 100%);
+        }
+
+        .book-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--color-primary);
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+
+        .book-author {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .book-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-available {
+            background: rgba(138, 154, 123, 0.2);
+            color: var(--autumn-forest);
+        }
+
+        .status-rented {
+            background: rgba(184, 118, 83, 0.2);
+            color: var(--autumn-copper);
+        }
+
+        /* Umbrella Grid */
+        .umbrella-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .umbrella-item {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--color-border);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(61, 61, 61, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 35px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--color-border);
+        }
+
+        .modal-content h2 {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--autumn-clay);
+            padding-bottom: 12px;
+        }
+
+        /* Search/Filter Section */
+        .filter-section {
+            background: linear-gradient(135deg, rgba(138, 154, 123, 0.1) 0%, rgba(201, 166, 138, 0.1) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid var(--color-border);
+        }
+
+        .filter-section h3 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* Stats */
+        .stats-bar {
+            background: linear-gradient(135deg, rgba(125, 60, 76, 0.1) 0%, rgba(160, 86, 66, 0.1) 100%);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: var(--color-primary);
+            border: 1px solid rgba(125, 60, 76, 0.2);
+        }
+
+        /* Menu Page */
+        .menu-page {
+            display: none;
+        }
+
+        .menu-page.active {
+            display: block;
+        }
+
+        .menu-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        /* About Section */
+        .about-section {
+            background: linear-gradient(135deg, rgba(125, 60, 76, 0.05) 0%, rgba(138, 154, 123, 0.05) 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 2px solid var(--color-border);
+        }
+
+        .about-section h2 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+            text-align: center;
+        }
+
+        .about-section p {
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .menu-card {
+            background: var(--color-surface);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 2px solid var(--color-border);
+        }
+
+        .menu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(125, 60, 76, 0.2);
+            border-color: var(--color-primary);
+        }
+
+        .menu-card-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .menu-card h3 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .menu-card p {
+            color: #666;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+
+        /* Camera Scanner */
+        #scanner-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        #scanner-container video {
+            width: 100%;
+            border-radius: 12px;
+            border: 3px solid var(--color-primary);
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 60%;
+            border: 3px solid var(--autumn-sage);
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .scanner-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 35%;
+            border: 3px dashed #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(138, 154, 123, 0.1);
+        }
+
+        .scanner-guide-text {
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* QR Code Styles */
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 20px auto;
+            background: #f0f0f0;
+            border-radius: 12px;
+            border: 3px solid var(--color-primary);
+            overflow: hidden;
+        }
+
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .qr-code-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code-display canvas {
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .umbrella-qr-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        /* Book Actions */
+        .hidden {
+            display: none;
+        }
+
+        /* Hamburger Menu */
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 2000;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 3px;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+
+        /* Hamburger Menu Modal */
+        .hamburger-menu-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(61, 61, 61, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hamburger-menu-modal.active {
+            display: flex;
+        }
+
+        .hamburger-menu-content {
+            background: var(--color-surface);
+            border-radius: 16px;
+            padding: 35px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--color-border);
+        }
+
+        .hamburger-menu-content h2 {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--autumn-clay);
+            padding-bottom: 12px;
+            text-align: center;
+        }
+
+        .hamburger-menu-content button {
+            width: 100%;
+            margin-bottom: 10px;
+            text-align: left;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            nav button:not(.hamburger) {
+                display: none;
+            }
+
+            nav {
+                position: relative;
+            }
+        }
+
+        /* Book Detail Actions */
+        .book-detail-actions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .book-detail-actions button {
+            margin-bottom: 10px;
+        }
+
+        .delete-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #999;
+            font-size: 0.85rem;
+            text-decoration: underline;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .delete-link:hover {
+            opacity: 1;
+            color: var(--autumn-rust);
+        }
+
+        /* Reviews */
+        .reviews-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .review-item {
+            background: rgba(138, 154, 123, 0.08);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--autumn-sage);
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .review-rating {
+            color: var(--autumn-copper);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .book-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .menu-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hamburger Button (Global) -->
+        <button class="hamburger hidden" onclick="toggleHamburgerMenu()" id="global-hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <header onclick="toggleHamburgerMenu()" style="cursor: pointer;">
+            <h1>📚☂️ BookBrella</h1>
+            <p class="subtitle">書籍と傘を通じて、知識と助け合いを共有するプラットフォーム</p>
+        </header>
+
+        <!-- Login Page -->
+        <div id="login-page" class="card">
+            <h2>ログイン</h2>
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="login-email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+                <label>パスワード</label>
+                <input type="password" id="login-password">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="login()" style="width: 100%; margin: 0;">ログイン</button>
+                <button class="btn btn-secondary" onclick="showRegisterModal()" style="width: 100%; margin: 0;">新規ユーザー登録</button>
+                <button class="btn btn-success" onclick="devLogin()" style="width: 100%; margin: 0;">開発用ログイン（管理者）</button>
+            </div>
+        </div>
+
+        <!-- Menu Page -->
+        <div id="menu-page" class="menu-page">
+            <div style="text-align: right; margin-bottom: 20px;">
+                <a href="#" onclick="showAboutModal(); return false;" style="color: var(--color-primary); text-decoration: underline; font-size: 0.95rem;">当サイトについて</a>
+            </div>
+            
+            <div class="menu-cards">
+                <div class="menu-card" onclick="showSection('books')">
+                    <div class="menu-card-icon">📚</div>
+                    <h3>ヨムっと</h3>
+                    <p>書籍管理</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">おすすめの本を共有して、みんなで知識を広げよう</p>
+                </div>
+
+                <div class="menu-card" onclick="showSection('umbrellas')">
+                    <div class="menu-card-icon">☂️</div>
+                    <h3>カサっと</h3>
+                    <p>傘レンタル管理</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">急な雨でも大丈夫。貸し傘を手軽にレンタル</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hamburger Menu Modal -->
+        <div id="hamburger-menu-modal" class="hamburger-menu-modal">
+            <div class="hamburger-menu-content">
+                <h2>📚☂️ メニュー</h2>
+                <button class="btn btn-primary" onclick="navigateFromHamburger('menu')">🏠 メニュー</button>
+                <button class="btn btn-primary" onclick="navigateFromHamburger('books')">📚 ヨムっと</button>
+                <button class="btn btn-primary" onclick="navigateFromHamburger('umbrellas')">☂️ カサっと</button>
+                <button class="btn btn-primary hidden" id="hamburger-users-btn" onclick="navigateFromHamburger('users')">👥 ユーザー管理</button>
+                <button class="btn btn-danger" onclick="logout()">ログアウト</button>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="hidden">
+            <nav id="main-nav" style="display: none;">
+                <button onclick="showMenu()">🏠 メニュー</button>
+                <button onclick="showSection('books')">📚 ヨムっと</button>
+                <button onclick="showSection('umbrellas')">☂️ カサっと</button>
+                <button onclick="showSection('users')" id="admin-users-btn" class="hidden">👥 ユーザー管理</button>
+                <button onclick="logout()" style="float: right;">ログアウト</button>
+            </nav>
+
+            <!-- Books Section -->
+            <div id="books-section" class="hidden">
+                <div class="stats-bar" id="books-stats">登録書籍数: 0冊</div>
+
+                <h3 style="color: var(--color-primary); margin-bottom: 15px; font-size: 1.5rem; cursor: pointer; user-select: none;" onclick="toggleBookList()">📚 書籍一覧 <span id="booklist-toggle-icon">▲</span></h3>
+                <div class="book-grid" id="books-list"></div>
+
+                <div class="filter-section" style="margin-top: 30px;">
+                <h3 style="cursor: pointer; user-select: none;" onclick="toggleSearchFilter()">📖 書籍検索 <span id="search-toggle-icon">▼</span></h3>
+                <div id="search-filter-content" style="display: none;">
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>タイトル</label>
+                        <input type="text" id="filter-title" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>ジャンル</label>
+                        <select id="filter-genre">
+                            <option value="">すべて</option>
+                            <option value="ビジネス">ビジネス</option>
+                            <option value="技術">技術</option>
+                            <option value="小説">小説</option>
+                            <option value="実用書">実用書</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>評価</label>
+                        <select id="filter-rating">
+                            <option value="">すべて</option>
+                            <option value="5">★★★★★</option>
+                            <option value="4">★★★★以上</option>
+                            <option value="3">★★★以上</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>概要</label>
+                        <input type="text" id="filter-description" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>出版年</label>
+                        <input type="number" id="filter-year" placeholder="2020" min="1900" max="2100">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="filterBooks()">検索</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">クリア</button>
+                </div>
+            </div>
+
+                <div class="filter-section" style="margin-top: 30px;">
+                    <h3 style="cursor: pointer; user-select: none;" onclick="toggleBookRegister()">📝 書籍登録 <span id="register-toggle-icon">▼</span></h3>
+                    <div id="register-content" style="display: none;">
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                            <button class="btn btn-secondary" onclick="showBookRegisterModal()">書籍登録</button>
+                            <button class="btn btn-primary" onclick="showBulkRegisterModal()">ISBN一括登録</button>
+                            <button class="btn btn-success" onclick="exportBooks()">エクスポート</button>
+                            <button class="btn btn-secondary" onclick="showImportModal()">インポート</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Umbrellas Section -->
+            <div id="umbrellas-section" class="hidden">
+                <div class="stats-bar" id="umbrellas-stats">登録傘数: 0本</div>
+
+                <h3 style="color: var(--color-primary); margin-bottom: 15px; font-size: 1.5rem; cursor: pointer; user-select: none;" onclick="toggleUmbrellaList()">☂️ 傘一覧 <span id="umbrellalist-toggle-icon">▲</span></h3>
+                <div class="umbrella-grid" id="umbrellas-list"></div>
+
+                <div class="filter-section" style="margin-top: 30px;">
+                    <h3 style="cursor: pointer; user-select: none;" onclick="toggleUmbrellaRegister()">📝 傘登録・管理（管理者様） <span id="umbrella-register-toggle-icon">▼</span></h3>
+                    <div id="umbrella-register-content" style="display: none;">
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                            <button class="btn btn-primary" onclick="showUmbrellaRegisterModal()" id="admin-umbrella-btn" class="hidden">傘登録</button>
+                            <button class="btn btn-secondary" onclick="showQRScanner()">QRスキャン（貸出・返却）</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users-section" class="hidden">
+                <div class="card">
+                    <h2>👥 ユーザー管理</h2>
+                    <button class="btn btn-primary" onclick="showRegisterModal()">新規ユーザー登録</button>
+                    <button class="btn btn-secondary" onclick="showCSVModal()">CSVインポート</button>
+                    <div id="users-list" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Register Modal -->
+        <div id="book-register-modal" class="modal">
+            <div class="modal-content">
+                <h2>📚 書籍登録</h2>
+                
+                <div class="form-group">
+                    <label>ISBNコードスキャン</label>
+                    <button class="btn btn-secondary" onclick="startBarcodeScanner()">📷 バーコードをスキャン</button>
+                </div>
+                
+                <div id="scanner-container" class="hidden">
+                    <canvas id="barcode-canvas"></canvas>
+                </div>
+
+                <div class="form-group">
+                    <label>ISBNコード</label>
+                    <input type="text" id="book-isbn" placeholder="ハイフン付きでも入力可能です">
+                    <button class="btn btn-secondary" onclick="searchBookByISBN()" style="margin-top: 8px;">📖 ISBN検索</button>
+                </div>
+                <div class="form-group">
+                    <label>タイトル</label>
+                    <input type="text" id="book-title">
+                </div>
+                <div class="form-group">
+                    <label>著者</label>
+                    <input type="text" id="book-author">
+                </div>
+                <div class="form-group">
+                    <label>ジャンル</label>
+                    <select id="book-genre">
+                        <option value="">選択してください</option>
+                        <option value="ビジネス">ビジネス</option>
+                        <option value="技術">技術</option>
+                        <option value="小説">小説</option>
+                        <option value="実用書">実用書</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>出版社</label>
+                    <input type="text" id="book-publisher">
+                </div>
+                <div class="form-group">
+                    <label>発売日</label>
+                    <input type="date" id="book-date">
+                </div>
+                <div class="form-group">
+                    <label>所有者タイプ</label>
+                    <select id="book-owner-type" onchange="toggleOwnerField()">
+                        <option value="会社所有">会社所有</option>
+                        <option value="個人所有（貸出可）">個人所有（貸出可）</option>
+                        <option value="個人所有（貸出不可）">個人所有（貸出不可）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>拠点</label>
+                    <select id="book-location">
+                        <option value="豊洲">豊洲</option>
+                        <option value="アロマ">アロマ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>所有者名</label>
+                    <input type="text" id="book-owner">
+                </div>
+                <input type="hidden" id="book-image-url">
+                <input type="hidden" id="book-description">
+                <button class="btn btn-primary" onclick="registerBook()">登録</button>
+                <button class="btn btn-cancel" onclick="closeModal('book-register-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Book Edit Modal -->
+        <div id="book-edit-modal" class="modal">
+            <div class="modal-content">
+                <h2>📝 書籍情報編集</h2>
+                <input type="hidden" id="edit-book-id">
+                <div class="form-group">
+                    <label>タイトル</label>
+                    <input type="text" id="edit-book-title">
+                </div>
+                <div class="form-group">
+                    <label>著者</label>
+                    <input type="text" id="edit-book-author">
+                </div>
+                <div class="form-group">
+                    <label>ジャンル</label>
+                    <select id="edit-book-genre">
+                        <option value="ビジネス">ビジネス</option>
+                        <option value="技術">技術</option>
+                        <option value="小説">小説</option>
+                        <option value="実用書">実用書</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>出版社</label>
+                    <input type="text" id="edit-book-publisher">
+                </div>
+                <div class="form-group">
+                    <label>所有者タイプ</label>
+                    <select id="edit-book-owner-type">
+                        <option value="会社所有">会社所有</option>
+                        <option value="個人所有（貸出可）">個人所有（貸出可）</option>
+                        <option value="個人所有（貸出不可）">個人所有（貸出不可）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>拠点</label>
+                    <select id="edit-book-location">
+                        <option value="豊洲">豊洲</option>
+                        <option value="アロマ">アロマ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>所有者名</label>
+                    <input type="text" id="edit-book-owner">
+                </div>
+                <button class="btn btn-primary" onclick="updateBook()">更新</button>
+                <button class="btn btn-cancel" onclick="closeModal('book-edit-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Book Detail Modal -->
+        <div id="book-detail-modal" class="modal">
+            <div class="modal-content">
+                <div id="book-detail-content"></div>
+                <button class="btn btn-cancel" onclick="closeModal('book-detail-modal')">閉じる</button>
+            </div>
+        </div>
+
+        <!-- Book Rental Modal -->
+        <div id="book-rental-modal" class="modal">
+            <div class="modal-content">
+                <h2>📖 書籍貸出</h2>
+                <input type="hidden" id="rental-book-id">
+                <div class="form-group">
+                    <label>貸出者名</label>
+                    <input type="text" id="rental-borrower">
+                </div>
+                <div class="form-group">
+                    <label>返却予定日</label>
+                    <input type="date" id="rental-return-date">
+                </div>
+                <button class="btn btn-primary" onclick="rentBook()">貸出</button>
+                <button class="btn btn-cancel" onclick="closeModal('book-rental-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Review Modal -->
+        <div id="review-modal" class="modal">
+            <div class="modal-content">
+                <h2>⭐ レビュー追加</h2>
+                <input type="hidden" id="review-book-id">
+                <div class="form-group">
+                    <label>レビューア名</label>
+                    <input type="text" id="review-name">
+                </div>
+                <div class="form-group">
+                    <label>評価</label>
+                    <select id="review-rating">
+                        <option value="5">★★★★★</option>
+                        <option value="4">★★★★</option>
+                        <option value="3">★★★</option>
+                        <option value="2">★★</option>
+                        <option value="1">★</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>コメント</label>
+                    <textarea id="review-comment" rows="4"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="addReview()">保存</button>
+                <button class="btn btn-cancel" onclick="closeModal('review-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Umbrella Register Modal -->
+        <div id="umbrella-register-modal" class="modal">
+            <div class="modal-content">
+                <h2>☂️ 傘登録</h2>
+                <div class="form-group">
+                    <label>名称</label>
+                    <input type="text" id="umbrella-name">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <select id="umbrella-color">
+                        <option value="">選択してください</option>
+                        <option value="透明">透明</option>
+                        <option value="黒">黒</option>
+                        <option value="白">白</option>
+                        <option value="その他">その他（任意入力）</option>
+                    </select>
+                    <input type="text" id="umbrella-color-custom" placeholder="その他の色を入力" style="margin-top: 8px; display: none;">
+                </div>
+                <div class="form-group">
+                    <label>サイズ</label>
+                    <select id="umbrella-size">
+                        <option value="大">大</option>
+                        <option value="中">中</option>
+                        <option value="小">小</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>備考</label>
+                    <textarea id="umbrella-note" rows="3"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="registerUmbrella()">登録</button>
+                <button class="btn btn-cancel" onclick="closeModal('umbrella-register-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Umbrella Rental Modal -->
+        <div id="umbrella-rental-modal" class="modal">
+            <div class="modal-content">
+                <h2>☂️ 傘貸出</h2>
+                <input type="hidden" id="umbrella-rental-id">
+                <div class="form-group">
+                    <label>貸出者名</label>
+                    <input type="text" id="umbrella-borrower">
+                </div>
+                <div class="form-group">
+                    <label>返却予定日</label>
+                    <input type="date" id="umbrella-return-date">
+                </div>
+                <button class="btn btn-primary" onclick="rentUmbrella()">貸出</button>
+                <button class="btn btn-cancel" onclick="closeModal('umbrella-rental-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- QR Scanner Modal -->
+        <div id="qr-modal" class="modal">
+            <div class="modal-content">
+                <h2>QRコードスキャン（傘の貸出・返却）</h2>
+                <p>傘のQRコードをカメラでスキャンしてください</p>
+                
+                <div id="qr-scanner-container" class="hidden">
+                    <canvas id="qr-canvas"></canvas>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="startQRScanner()" id="start-qr-scan-btn">📷 スキャン開始</button>
+                    <button class="btn btn-secondary hidden" onclick="stopQRScanner()" id="stop-qr-scan-btn">⏹️ スキャン停止</button>
+                </div>
+                
+                <div id="qr-scan-status" style="text-align: center; margin: 15px 0; color: var(--color-primary);"></div>
+                
+                <button class="btn btn-cancel" onclick="closeModal('qr-modal')">閉じる</button>
+            </div>
+        </div>
+
+        <!-- QR Code Display Modal -->
+        <div id="qr-display-modal" class="modal">
+            <div class="modal-content">
+                <h2>傘のQRコード</h2>
+                <div id="qr-display-content" class="qr-code-display">
+                    <!-- QRコードがここに表示される -->
+                </div>
+                <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: #666;">
+                    このQRコードを貸出・返却時にスキャンしてください
+                </p>
+                <button class="btn btn-cancel" onclick="closeModal('qr-display-modal')">閉じる</button>
+            </div>
+        </div>
+
+        <!-- User Register Modal -->
+        <div id="register-modal" class="modal">
+            <div class="modal-content">
+                <h2>新規ユーザー登録</h2>
+                <div class="form-group">
+                    <label>名前</label>
+                    <input type="text" id="register-name">
+                </div>
+                <div class="form-group">
+                    <label>メールアドレス</label>
+                    <input type="email" id="register-email">
+                </div>
+                <div class="form-group">
+                    <label>パスワード</label>
+                    <input type="password" id="register-password">
+                </div>
+                <div class="form-group">
+                    <label>ユーザータイプ</label>
+                    <select id="register-type">
+                        <option value="general">一般ユーザー</option>
+                        <option value="admin">管理者</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="registerUser()">登録</button>
+                <button class="btn btn-cancel" onclick="closeModal('register-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- CSV Import Modal -->
+        <div id="csv-modal" class="modal">
+            <div class="modal-content">
+                <h2>CSVインポート</h2>
+                <p>CSVファイル形式: 名前,メールアドレス,パスワード,ユーザータイプ(admin/general)</p>
+                <div class="form-group">
+                    <input type="file" id="csv-file" accept=".csv">
+                </div>
+                <button class="btn btn-primary" onclick="importCSV()">インポート</button>
+                <button class="btn btn-cancel" onclick="closeModal('csv-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- About Modal -->
+        <div id="about-modal" class="modal">
+            <div class="modal-content">
+                <h2>BookBrellaへようこそ</h2>
+                <p><strong>BookBrella（ブックブレラ）</strong>は、「Book（書籍）」と「Umbrella（傘）」を組み合わせた名前です。</p>
+                <p>雨の日に傘が人を守るように、このシステムは職場のみんなを助け、知識の共有を促進します。</p>
+                <p><strong>📚 ヨムっと</strong>では、おすすめの本やレビューを共有して、職場全体で知識を深めることができます。</p>
+                <p><strong>☂️ カサっと</strong>では、急な雨でも安心。職場の貸し傘を簡単にレンタルできます。</p>
+                <button class="btn btn-cancel" onclick="closeModal('about-modal')">閉じる</button>
+            </div>
+        </div>
+
+        <!-- Bulk Register Modal -->
+        <div id="bulk-register-modal" class="modal">
+            <div class="modal-content">
+                <h2>📚 ISBN一括登録</h2>
+                <p>ISBNコードを改行区切りで入力してください（ハイフン付き可）</p>
+                <div class="form-group">
+                    <label>ISBNリスト</label>
+                    <textarea id="bulk-isbn-list" rows="10" placeholder="9784798189765&#10;978-4-478-11948-8&#10;9784866367293"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>所有者タイプ</label>
+                    <select id="bulk-owner-type" onchange="toggleBulkOwnerField()">
+                        <option value="会社所有">会社所有</option>
+                        <option value="個人所有（貸出可）">個人所有（貸出可）</option>
+                        <option value="個人所有（貸出不可）">個人所有（貸出不可）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>拠点</label>
+                    <select id="bulk-location">
+                        <option value="豊洲">豊洲</option>
+                        <option value="アロマ">アロマ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>所有者名</label>
+                    <input type="text" id="bulk-owner" value="会社">
+                </div>
+                <div id="bulk-progress" style="margin: 15px 0; display: none;">
+                    <div style="background: #e0e0e0; border-radius: 8px; overflow: hidden;">
+                        <div id="bulk-progress-bar" style="background: var(--color-primary); height: 30px; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;"></div>
+                    </div>
+                    <p id="bulk-status" style="margin-top: 10px; color: var(--color-primary);"></p>
+                </div>
+                <button class="btn btn-primary" onclick="bulkRegisterBooks()">一括登録開始</button>
+                <button class="btn btn-cancel" onclick="closeModal('bulk-register-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="import-modal" class="modal">
+            <div class="modal-content">
+                <h2>📥 書籍データインポート</h2>
+                <p>CSVファイルまたはJSONファイルから書籍データをインポートできます</p>
+                <div class="form-group">
+                    <label>ファイル選択</label>
+                    <input type="file" id="import-file" accept=".csv,.json">
+                </div>
+                <div class="form-group">
+                    <label>ファイル形式</label>
+                    <select id="import-format">
+                        <option value="csv">CSV形式</option>
+                        <option value="json">JSON形式</option>
+                    </select>
+                </div>
+                <div style="margin: 15px 0; padding: 15px; background: rgba(138, 154, 123, 0.1); border-radius: 8px; font-size: 0.9rem;">
+                    <strong>CSV形式:</strong> ISBN,タイトル,著者,ジャンル,出版社,発売日,所有者タイプ,拠点,所有者名<br>
+                    <strong>JSON形式:</strong> 書籍オブジェクトの配列
+                </div>
+                <button class="btn btn-primary" onclick="importBooks()">インポート開始</button>
+                <button class="btn btn-cancel" onclick="closeModal('import-modal')">キャンセル</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Data Storage
+        let users = [
+            { id: 1, name: '管理者', email: 'admin@test.com', password: 'admin', type: 'admin' },
+            { id: 2, name: '一般ユーザー', email: 'user@test.com', password: 'user', type: 'general' }
+        ];
+        let books = [];
+        let umbrellas = [];
+        let currentUser = null;
+        let barcodeScanner = null;
+        let qrScanner = null;
+        let qrVideo = null;
+        let qrCanvas = null;
+        let qrCtx = null;
+        let qrScanning = false;
+
+        // Initialize
+        function init() {
+            showLoginPage();
+            loadSampleBooks();
+        }
+
+        function loadSampleBooks() {
+            books = [
+                {
+                    id: 1,
+                    isbn: '978-4-7741-9763-1',
+                    title: 'リーダブルコード',
+                    author: 'Dustin Boswell',
+                    genre: '技術',
+                    publisher: '技術評論社',
+                    date: '2012-06-23',
+                    ownerType: '会社所有',
+                    location: '豊洲',
+                    owner: '会社',
+                    imageUrl: 'https://m.media-amazon.com/images/I/51MgH8Jmr+L._SY445_SX342_.jpg',
+                    description: 'より良いコードを書くためのシンプルで実践的なテクニック集。',
+                    status: 'available',
+                    rentals: [],
+                    reviews: []
+                },
+                {
+                    id: 2,
+                    isbn: '9784798189765',
+                    title: 'プログラミング言語大全',
+                    author: '黒川利明',
+                    genre: '技術',
+                    publisher: '翔泳社',
+                    date: '2024-03-13',
+                    ownerType: '会社所有',
+                    location: '豊洲',
+                    owner: '会社',
+                    imageUrl: 'https://books.google.com/books/content?id=example&printsec=frontcover&img=1&zoom=1',
+                    description: '世界のプログラミング言語を網羅的に解説した一冊。',
+                    status: 'available',
+                    rentals: [],
+                    reviews: []
+                },
+                {
+                    id: 3,
+                    isbn: '9784478119488',
+                    title: 'エフォートレス思考',
+                    author: 'グレッグ・マキューン',
+                    genre: 'ビジネス',
+                    publisher: 'ダイヤモンド社',
+                    date: '2021-12-08',
+                    ownerType: '会社所有',
+                    location: '豊洲',
+                    owner: '会社',
+                    imageUrl: 'https://books.google.com/books/content?id=example&printsec=frontcover&img=1&zoom=1',
+                    description: '努力を最小化して成果を最大化する方法を解説。',
+                    status: 'available',
+                    rentals: [],
+                    reviews: []
+                },
+                {
+                    id: 4,
+                    isbn: '9784866367293',
+                    title: 'ハック思考',
+                    author: '須藤憲司',
+                    genre: 'ビジネス',
+                    publisher: 'NewsPicksパブリッシング',
+                    date: '2020-02-06',
+                    ownerType: '会社所有',
+                    location: '豊洲',
+                    owner: '会社',
+                    imageUrl: 'https://books.google.com/books/content?id=example&printsec=frontcover&img=1&zoom=1',
+                    description: '最短距離で目標を達成するための思考法。',
+                    status: 'available',
+                    rentals: [],
+                    reviews: []
+                },
+                {
+                    id: 5,
+                    isbn: '9784322144901',
+                    title: '新しい会計の教科書',
+                    author: '田中靖浩',
+                    genre: 'ビジネス',
+                    publisher: 'きんざい',
+                    date: '2020-11-25',
+                    ownerType: '会社所有',
+                    location: '豊洲',
+                    owner: '会社',
+                    imageUrl: 'https://books.google.com/books/content?id=example&printsec=frontcover&img=1&zoom=1',
+                    description: '会計の基礎から応用まで体系的に学べる一冊。',
+                    status: 'available',
+                    rentals: [],
+                    reviews: []
+                }
+            ];
+        }
+
+        // Authentication
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                currentUser = user;
+                showMainApp();
+                showMenu();
+            } else {
+                alert('ログインに失敗しました');
+            }
+        }
+
+        function devLogin() {
+            // 開発用：管理者で自動ログイン
+            currentUser = users.find(u => u.type === 'admin');
+            showMainApp();
+            showMenu();
+        }
+
+        function logout() {
+            currentUser = null;
+            closeHamburgerMenu();
+            showLoginPage();
+        }
+
+        function showLoginPage() {
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('menu-page').classList.remove('active');
+            document.getElementById('global-hamburger').style.display = 'none';
+        }
+
+        function showMainApp() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            if (currentUser.type === 'admin') {
+                document.getElementById('admin-users-btn').classList.remove('hidden');
+                document.getElementById('admin-umbrella-btn').classList.remove('hidden');
+                document.getElementById('hamburger-users-btn').classList.remove('hidden');
+            }
+        }
+
+        function showMenu() {
+            document.getElementById('menu-page').classList.add('active');
+            document.getElementById('books-section').classList.add('hidden');
+            document.getElementById('umbrellas-section').classList.add('hidden');
+            document.getElementById('users-section').classList.add('hidden');
+        }
+
+        function showSection(section) {
+            document.getElementById('menu-page').classList.remove('active');
+            document.getElementById('books-section').classList.add('hidden');
+            document.getElementById('umbrellas-section').classList.add('hidden');
+            document.getElementById('users-section').classList.add('hidden');
+            
+            if (section === 'books') {
+                document.getElementById('books-section').classList.remove('hidden');
+                displayBooks();
+            } else if (section === 'umbrellas') {
+                document.getElementById('umbrellas-section').classList.remove('hidden');
+                displayUmbrellas();
+            } else if (section === 'users') {
+                document.getElementById('users-section').classList.remove('hidden');
+                displayUsers();
+            }
+        }
+
+        // Books
+        function displayBooks(filteredBooks = null) {
+            const booksToDisplay = filteredBooks || books;
+            const booksList = document.getElementById('books-list');
+            const stats = document.getElementById('books-stats');
+            
+            stats.textContent = `登録書籍数: ${books.length}冊`;
+            
+            booksList.innerHTML = booksToDisplay.map(book => `
+                <div class="book-item" onclick="showBookDetail(${book.id})">
+                    <img src="${book.imageUrl || 'https://via.placeholder.com/150x220/8a9a7b/ffffff?text=No+Image'}" 
+                         alt="${book.title}" class="book-cover">
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-author">${book.author}</div>
+                    <div class="book-status ${book.status === 'available' ? 'status-available' : 'status-rented'}">
+                        ${book.status === 'available' ? '貸出可' : '貸出中'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterBooks() {
+            const title = document.getElementById('filter-title').value.toLowerCase();
+            const genre = document.getElementById('filter-genre').value;
+            const rating = document.getElementById('filter-rating').value;
+            const description = document.getElementById('filter-description').value.toLowerCase();
+            const year = document.getElementById('filter-year').value;
+            
+            let filtered = books;
+            
+            // タイトル部分一致
+            if (title) {
+                filtered = filtered.filter(b => b.title.toLowerCase().includes(title));
+            }
+            
+            // ジャンル
+            if (genre) {
+                filtered = filtered.filter(b => b.genre === genre);
+            }
+            
+            // 評価
+            if (rating) {
+                filtered = filtered.filter(b => {
+                    const avgRating = getAverageRating(b);
+                    return avgRating >= parseInt(rating);
+                });
+            }
+            
+            // 概要部分一致
+            if (description) {
+                filtered = filtered.filter(b => 
+                    b.description && b.description.toLowerCase().includes(description)
+                );
+            }
+            
+            // 出版年
+            if (year) {
+                filtered = filtered.filter(b => {
+                    if (!b.date) return false;
+                    const bookYear = parseInt(b.date.substring(0, 4));
+                    return bookYear === parseInt(year);
+                });
+            }
+            
+            displayBooks(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-title').value = '';
+            document.getElementById('filter-genre').value = '';
+            document.getElementById('filter-rating').value = '';
+            document.getElementById('filter-description').value = '';
+            document.getElementById('filter-year').value = '';
+            displayBooks();
+        }
+
+        function getAverageRating(book) {
+            if (!book.reviews || book.reviews.length === 0) return 0;
+            const sum = book.reviews.reduce((acc, r) => acc + r.rating, 0);
+            return sum / book.reviews.length;
+        }
+
+        function showBookDetail(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (!book) return;
+            
+            const avgRating = getAverageRating(book);
+            const stars = '★'.repeat(Math.round(avgRating)) + '☆'.repeat(5 - Math.round(avgRating));
+            
+            const content = `
+                <h2>${book.title}</h2>
+                <img src="${book.imageUrl || 'https://via.placeholder.com/200x280'}" 
+                     style="max-width: 200px; height: auto; margin: 15px 0; border-radius: 8px;">
+                <p><strong>著者:</strong> ${book.author}</p>
+                <p><strong>ジャンル:</strong> ${book.genre}</p>
+                <p><strong>出版社:</strong> ${book.publisher}</p>
+                <p><strong>ISBN:</strong> ${book.isbn}</p>
+                <p><strong>所有者:</strong> ${book.ownerType} - ${book.owner}</p>
+                <p><strong>拠点:</strong> ${book.location}</p>
+                <p><strong>ステータス:</strong> ${book.status === 'available' ? '貸出可' : '貸出中'}</p>
+                <p><strong>平均評価:</strong> ${stars} (${avgRating.toFixed(1)})</p>
+                ${book.description ? `<p><strong>概要:</strong> ${book.description}</p>` : ''}
+                
+                <div class="book-detail-actions">
+                    ${book.ownerType === '個人所有（貸出不可）' ? 
+                        `<p style="color: #999; font-style: italic;">※ この書籍は貸出不可です</p>` :
+                        book.status === 'available' ? 
+                            `<button class="btn btn-primary" onclick="showRentalModal(${book.id})">貸出</button>` : 
+                            `<button class="btn btn-success" onclick="returnBook(${book.id})">返却</button>`
+                    }
+                    <button class="btn btn-secondary" onclick="showReviewModal(${book.id})">レビュー追加</button>
+                    <button class="btn btn-secondary" onclick="showEditBookModal(${book.id})">編集</button>
+                    <div class="delete-link" onclick="deleteBook(${book.id})">この書籍を削除</div>
+                </div>
+                
+                <div class="reviews-section">
+                    <h3 style="color: var(--color-primary); margin-bottom: 15px;">レビュー (${book.reviews.length}件)</h3>
+                    ${book.reviews.map(r => `
+                        <div class="review-item">
+                            <div class="review-header">
+                                <span>${r.name}</span>
+                                <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                            </div>
+                            <div>${r.comment}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('book-detail-content').innerHTML = content;
+            openModal('book-detail-modal');
+        }
+
+        function showBookRegisterModal() {
+            document.getElementById('book-isbn').value = '';
+            document.getElementById('book-title').value = '';
+            document.getElementById('book-author').value = '';
+            document.getElementById('book-genre').value = '';
+            document.getElementById('book-publisher').value = '';
+            document.getElementById('book-date').value = '';
+            document.getElementById('book-owner-type').value = '会社所有';
+            document.getElementById('book-location').value = '豊洲';
+            document.getElementById('book-owner').value = '';
+            toggleOwnerField();
+            openModal('book-register-modal');
+        }
+
+        function showEditBookModal(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (!book) return;
+            
+            document.getElementById('edit-book-id').value = book.id;
+            document.getElementById('edit-book-title').value = book.title;
+            document.getElementById('edit-book-author').value = book.author;
+            document.getElementById('edit-book-genre').value = book.genre;
+            document.getElementById('edit-book-publisher').value = book.publisher;
+            document.getElementById('edit-book-owner-type').value = book.ownerType;
+            document.getElementById('edit-book-location').value = book.location;
+            document.getElementById('edit-book-owner').value = book.owner;
+            
+            openModal('book-edit-modal');
+        }
+
+        function updateBook() {
+            const id = parseInt(document.getElementById('edit-book-id').value);
+            const book = books.find(b => b.id === id);
+            
+            if (book) {
+                book.title = document.getElementById('edit-book-title').value;
+                book.author = document.getElementById('edit-book-author').value;
+                book.genre = document.getElementById('edit-book-genre').value;
+                book.publisher = document.getElementById('edit-book-publisher').value;
+                book.ownerType = document.getElementById('edit-book-owner-type').value;
+                book.location = document.getElementById('edit-book-location').value;
+                book.owner = document.getElementById('edit-book-owner').value;
+                
+                displayBooks();
+                closeModal('book-edit-modal');
+                alert('書籍情報を更新しました');
+            }
+        }
+
+        function deleteBook(bookId) {
+            if (confirm('この書籍を削除してもよろしいですか?')) {
+                books = books.filter(b => b.id !== bookId);
+                displayBooks();
+                alert('書籍を削除しました');
+            }
+        }
+
+        let video = null;
+        let barcodeCanvas = null;
+        let barcodeCtx = null;
+        let barcodeStreaming = false;
+        let autoShutterCooldown = false;
+        let lastBarcodeDetected = null;
+
+        function startBarcodeScanner() {
+            const container = document.getElementById('scanner-container');
+            container.classList.remove('hidden');
+            
+            // video要素を作成（非表示）
+            if (!video) {
+                video = document.createElement('video');
+                video.setAttribute('autoplay', '');
+                video.setAttribute('muted', '');
+                video.setAttribute('playsinline', '');
+                video.style.display = 'none';
+                document.body.appendChild(video);
+            }
+
+            barcodeCanvas = document.getElementById('barcode-canvas');
+            barcodeCtx = barcodeCanvas.getContext('2d');
+            
+            // canvasサイズを設定
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+            barcodeCanvas.width = containerWidth;
+            barcodeCanvas.height = containerHeight;
+            
+            // カメラ起動
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 960 }
+                }
+            })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.onloadedmetadata = function() {
+                    video.play();
+                    barcodeStreaming = true;
+                    barcodeScanner = true;
+                    detectBarcode();
+                };
+            })
+            .catch(function(err) {
+                console.error('カメラエラー:', err);
+                alert('カメラの起動に失敗しました');
+                container.classList.add('hidden');
+            });
+        }
+
+        function drawBarcodeVideoToCanvas() {
+            if (!video.videoWidth || !video.videoHeight) return;
+            
+            const cw = barcodeCanvas.width;
+            const ch = barcodeCanvas.height;
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            
+            // 4:3アスペクト比に調整
+            const targetAspect = 4 / 3;
+            const videoAspect = vw / vh;
+            
+            let sx, sy, sw, sh;
+            if (videoAspect > targetAspect) {
+                sh = vh;
+                sw = vh * targetAspect;
+                sx = (vw - sw) / 2;
+                sy = 0;
+            } else {
+                sw = vw;
+                sh = vw / targetAspect;
+                sx = 0;
+                sy = (vh - sh) / 2;
+            }
+            
+            barcodeCtx.clearRect(0, 0, cw, ch);
+            barcodeCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
+        }
+
+        function detectBarcode() {
+            if (!barcodeStreaming) return;
+            if (!video || video.readyState < 2) {
+                requestAnimationFrame(detectBarcode);
+                return;
+            }
+            
+            drawBarcodeVideoToCanvas();
+            
+            // Quaggaでバーコード検出（検出精度向上）
+            Quagga.decodeSingle({
+                src: barcodeCanvas.toDataURL(),
+                numOfWorkers: 0,
+                inputStream: {
+                    size: barcodeCanvas.width,
+                    singleChannel: false
+                },
+                locator: {
+                    patchSize: "large",
+                    halfSample: false
+                },
+                decoder: {
+                    readers: ["ean_reader", "ean_8_reader"],
+                    multiple: false
+                },
+                locate: true,
+                frequency: 5
+            }, function(result) {
+                if (result && result.codeResult) {
+                    const code = result.codeResult.code;
+                    
+                    // ISBNチェック（978または979で始まる）
+                    if ((code.startsWith('978') || code.startsWith('979')) && !autoShutterCooldown) {
+                        console.log('有効なISBN検出:', code);
+                        
+                        // オートシャッター（バーコード検出したら即実行）
+                        autoShutterCooldown = true;
+                        lastBarcodeDetected = code;
+                        
+                        document.getElementById('book-isbn').value = code;
+                        stopBarcodeScanner();
+                        searchBookByISBN();
+                        
+                        setTimeout(function() {
+                            autoShutterCooldown = false;
+                        }, 1000);
+                        return;
+                    }
+                }
+                
+                if (barcodeStreaming) {
+                    requestAnimationFrame(detectBarcode);
+                }
+            });
+        }
+
+        function stopBarcodeScanner() {
+            barcodeStreaming = false;
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            const container = document.getElementById('scanner-container');
+            container.classList.add('hidden');
+        }
+
+        async function searchBookByISBN() {
+            const isbn = document.getElementById('book-isbn').value.replace(/-/g, '');
+            if (!isbn) return;
+            
+            try {
+                const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+                const data = await response.json();
+                
+                if (data.items && data.items.length > 0) {
+                    const bookInfo = data.items[0].volumeInfo;
+                    document.getElementById('book-title').value = bookInfo.title || '';
+                    document.getElementById('book-author').value = bookInfo.authors ? bookInfo.authors.join(', ') : '';
+                    document.getElementById('book-publisher').value = bookInfo.publisher || '';
+                    
+                    if (bookInfo.publishedDate) {
+                        document.getElementById('book-date').value = bookInfo.publishedDate;
+                    }
+                    
+                    // 書籍画像URLを保存（隠しフィールドに）
+                    if (bookInfo.imageLinks && bookInfo.imageLinks.thumbnail) {
+                        document.getElementById('book-image-url').value = bookInfo.imageLinks.thumbnail.replace('http://', 'https://');
+                    }
+                    
+                    // 書籍の概要を保存
+                    if (bookInfo.description) {
+                        document.getElementById('book-description').value = bookInfo.description;
+                    }
+                    
+                    alert('書籍情報を取得しました');
+                } else {
+                    alert('書籍情報が見つかりませんでした');
+                }
+            } catch (error) {
+                console.error('ISBN検索エラー:', error);
+                alert('書籍情報の取得に失敗しました');
+            }
+        }
+
+        function registerBook() {
+            const newBook = {
+                id: books.length + 1,
+                isbn: document.getElementById('book-isbn').value,
+                title: document.getElementById('book-title').value,
+                author: document.getElementById('book-author').value,
+                genre: document.getElementById('book-genre').value,
+                publisher: document.getElementById('book-publisher').value,
+                date: document.getElementById('book-date').value,
+                ownerType: document.getElementById('book-owner-type').value,
+                location: document.getElementById('book-location').value,
+                owner: document.getElementById('book-owner').value,
+                imageUrl: document.getElementById('book-image-url').value || '',
+                description: document.getElementById('book-description').value || '',
+                status: 'available',
+                rentals: [],
+                reviews: []
+            };
+            
+            books.push(newBook);
+            displayBooks();
+            closeModal('book-register-modal');
+            alert('書籍を登録しました');
+        }
+
+        function showRentalModal(bookId) {
+            document.getElementById('rental-book-id').value = bookId;
+            document.getElementById('rental-borrower').value = currentUser.name;
+            closeModal('book-detail-modal');
+            openModal('book-rental-modal');
+        }
+
+        function rentBook() {
+            const bookId = parseInt(document.getElementById('rental-book-id').value);
+            const book = books.find(b => b.id === bookId);
+            
+            if (book) {
+                book.status = 'rented';
+                book.rentals.push({
+                    borrower: currentUser.name,
+                    date: new Date().toISOString().split('T')[0],
+                    returnDate: document.getElementById('rental-return-date').value
+                });
+                
+                displayBooks();
+                closeModal('book-rental-modal');
+                alert('貸出処理が完了しました');
+            }
+        }
+
+        function returnBook(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (book) {
+                book.status = 'available';
+                displayBooks();
+                closeModal('book-detail-modal');
+                alert('返却処理が完了しました');
+            }
+        }
+
+        function showReviewModal(bookId) {
+            document.getElementById('review-book-id').value = bookId;
+            document.getElementById('review-name').value = currentUser.name;
+            closeModal('book-detail-modal');
+            openModal('review-modal');
+        }
+
+        function addReview() {
+            const bookId = parseInt(document.getElementById('review-book-id').value);
+            const book = books.find(b => b.id === bookId);
+            
+            if (book) {
+                book.reviews.push({
+                    name: currentUser.name,
+                    rating: parseInt(document.getElementById('review-rating').value),
+                    comment: document.getElementById('review-comment').value,
+                    date: new Date().toISOString().split('T')[0]
+                });
+                
+                closeModal('review-modal');
+                alert('レビューを追加しました');
+            }
+        }
+
+        // Umbrellas
+        function displayUmbrellas() {
+            const umbrellasList = document.getElementById('umbrellas-list');
+            const stats = document.getElementById('umbrellas-stats');
+            
+            stats.textContent = `登録傘数: ${umbrellas.length}本`;
+            
+            umbrellasList.innerHTML = umbrellas.map(umbrella => {
+                const latestRental = umbrella.rentals && umbrella.rentals.length > 0 
+                    ? umbrella.rentals[umbrella.rentals.length - 1] 
+                    : null;
+                
+                return `
+                <div class="umbrella-item">
+                    <h3>${umbrella.name}</h3>
+                    <p><strong>色:</strong> ${umbrella.color}</p>
+                    <p><strong>サイズ:</strong> ${umbrella.size}</p>
+                    <p><strong>備考:</strong> ${umbrella.note}</p>
+                    <p><strong>ステータス:</strong> ${umbrella.status === 'available' ? '貸出可' : '貸出中'}</p>
+                    ${umbrella.status === 'rented' && latestRental ? `
+                        <div style="background: rgba(184, 118, 83, 0.1); padding: 10px; border-radius: 6px; margin: 10px 0; border-left: 3px solid var(--autumn-copper);">
+                            <p style="margin: 5px 0;"><strong>貸出者:</strong> ${latestRental.borrower}</p>
+                            <p style="margin: 5px 0;"><strong>貸出日:</strong> ${latestRental.date}</p>
+                            <p style="margin: 5px 0;"><strong>返却予定日:</strong> ${latestRental.returnDate}</p>
+                        </div>
+                    ` : ''}
+                    <div class="umbrella-qr-section">
+                        <button class="btn btn-secondary" onclick="showUmbrellaQR(${umbrella.id})" style="font-size: 0.9rem; padding: 8px 16px; margin-right: 10px;">QRコード表示</button>
+                    </div>
+                    ${umbrella.status === 'available' ? 
+                        `<button class="btn btn-primary" onclick="showUmbrellaRentalModal(${umbrella.id})">貸出</button>` :
+                        `<button class="btn btn-success" onclick="returnUmbrella(${umbrella.id})">返却</button>`
+                    }
+                </div>
+            `;
+            }).join('');
+        }
+
+        function showUmbrellaRegisterModal() {
+            if (!currentUser || currentUser.type !== 'admin') {
+                alert('傘の登録は管理者のみ可能です');
+                return;
+            }
+            
+            document.getElementById('umbrella-color').value = '';
+            document.getElementById('umbrella-color-custom').style.display = 'none';
+            document.getElementById('umbrella-color-custom').value = '';
+            openModal('umbrella-register-modal');
+        }
+
+        function registerUmbrella() {
+            const colorSelect = document.getElementById('umbrella-color').value;
+            const colorCustom = document.getElementById('umbrella-color-custom').value;
+            const finalColor = colorSelect === 'その他' ? colorCustom : colorSelect;
+            
+            const newUmbrella = {
+                id: umbrellas.length + 1,
+                name: document.getElementById('umbrella-name').value,
+                color: finalColor,
+                size: document.getElementById('umbrella-size').value,
+                note: document.getElementById('umbrella-note').value,
+                status: 'available',
+                rentals: []
+            };
+            
+            umbrellas.push(newUmbrella);
+            displayUmbrellas();
+            closeModal('umbrella-register-modal');
+            alert('傘を登録しました');
+        }
+
+        function showUmbrellaRentalModal(umbrellaId) {
+            document.getElementById('umbrella-rental-id').value = umbrellaId;
+            document.getElementById('umbrella-borrower').value = currentUser.name;
+            openModal('umbrella-rental-modal');
+        }
+
+        function rentUmbrella() {
+            const umbrellaId = parseInt(document.getElementById('umbrella-rental-id').value);
+            const umbrella = umbrellas.find(u => u.id === umbrellaId);
+            
+            if (umbrella) {
+                umbrella.status = 'rented';
+                umbrella.rentals.push({
+                    borrower: document.getElementById('umbrella-borrower').value,
+                    date: new Date().toISOString().split('T')[0],
+                    returnDate: document.getElementById('umbrella-return-date').value
+                });
+                
+                displayUmbrellas();
+                closeModal('umbrella-rental-modal');
+                alert('貸出処理が完了しました');
+            }
+        }
+
+        function returnUmbrella(umbrellaId) {
+            const umbrella = umbrellas.find(u => u.id === umbrellaId);
+            if (umbrella) {
+                umbrella.status = 'available';
+                displayUmbrellas();
+                alert('返却処理が完了しました');
+            }
+        }
+
+        function showQRScanner() {
+            document.getElementById('qr-scanner-container').classList.add('hidden');
+            document.getElementById('start-qr-scan-btn').classList.remove('hidden');
+            document.getElementById('stop-qr-scan-btn').classList.add('hidden');
+            document.getElementById('qr-scan-status').textContent = '';
+            openModal('qr-modal');
+        }
+
+        // QR Scanner Functions
+        function startQRScanner() {
+            const container = document.getElementById('qr-scanner-container');
+            container.classList.remove('hidden');
+            document.getElementById('start-qr-scan-btn').classList.add('hidden');
+            document.getElementById('stop-qr-scan-btn').classList.remove('hidden');
+            
+            if (!qrVideo) {
+                qrVideo = document.createElement('video');
+                qrVideo.setAttribute('autoplay', '');
+                qrVideo.setAttribute('muted', '');
+                qrVideo.setAttribute('playsinline', '');
+                qrVideo.style.display = 'none';
+                document.body.appendChild(qrVideo);
+            }
+
+            qrCanvas = document.getElementById('qr-canvas');
+            qrCtx = qrCanvas.getContext('2d');
+            
+            const containerRect = container.getBoundingClientRect();
+            qrCanvas.width = containerRect.width;
+            qrCanvas.height = containerRect.height;
+            
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 640 },
+                    height: { ideal: 640 }
+                }
+            })
+            .then(function(stream) {
+                qrVideo.srcObject = stream;
+                qrVideo.onloadedmetadata = function() {
+                    qrVideo.play();
+                    qrScanning = true;
+                    document.getElementById('qr-scan-status').textContent = 'QRコードを検出中...';
+                    detectQRCode();
+                };
+            })
+            .catch(function(err) {
+                console.error('QRスキャナーエラー:', err);
+                alert('カメラの起動に失敗しました');
+                container.classList.add('hidden');
+                document.getElementById('start-qr-scan-btn').classList.remove('hidden');
+                document.getElementById('stop-qr-scan-btn').classList.add('hidden');
+            });
+        }
+
+        function stopQRScanner() {
+            qrScanning = false;
+            if (qrVideo && qrVideo.srcObject) {
+                qrVideo.srcObject.getTracks().forEach(track => track.stop());
+                qrVideo.srcObject = null;
+            }
+            
+            document.getElementById('qr-scanner-container').classList.add('hidden');
+            document.getElementById('start-qr-scan-btn').classList.remove('hidden');
+            document.getElementById('stop-qr-scan-btn').classList.add('hidden');
+            document.getElementById('qr-scan-status').textContent = '';
+        }
+
+        function drawQRVideoToCanvas() {
+            if (!qrVideo.videoWidth || !qrVideo.videoHeight) return;
+            
+            const cw = qrCanvas.width;
+            const ch = qrCanvas.height;
+            const vw = qrVideo.videoWidth;
+            const vh = qrVideo.videoHeight;
+            
+            // 正方形にクロップ
+            const size = Math.min(vw, vh);
+            const sx = (vw - size) / 2;
+            const sy = (vh - size) / 2;
+            
+            qrCtx.clearRect(0, 0, cw, ch);
+            qrCtx.drawImage(qrVideo, sx, sy, size, size, 0, 0, cw, ch);
+        }
+
+        function detectQRCode() {
+            if (!qrScanning) return;
+            if (!qrVideo || qrVideo.readyState < 2) {
+                requestAnimationFrame(detectQRCode);
+                return;
+            }
+            
+            drawQRVideoToCanvas();
+            
+            // QuaggaでQRコード検出
+            Quagga.decodeSingle({
+                src: qrCanvas.toDataURL(),
+                numOfWorkers: 0,
+                inputStream: {
+                    size: qrCanvas.width,
+                    singleChannel: false
+                },
+                locator: {
+                    patchSize: "large",
+                    halfSample: false
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader"],
+                    multiple: false
+                },
+                locate: true
+            }, function(result) {
+                if (result && result.codeResult) {
+                    const qrData = result.codeResult.code;
+                    console.log('QRコード検出:', qrData);
+                    
+                    try {
+                        // QRコードデータの解析
+                        const umbrellaData = JSON.parse(qrData);
+                        if (umbrellaData.type === 'umbrella' && umbrellaData.id) {
+                            processUmbrellaQR(umbrellaData.id);
+                        } else {
+                            document.getElementById('qr-scan-status').textContent = '無効なQRコードです';
+                        }
+                    } catch (e) {
+                        document.getElementById('qr-scan-status').textContent = '無効なQRコード形式です';
+                    }
+                } else if (qrScanning) {
+                    requestAnimationFrame(detectQRCode);
+                }
+            });
+        }
+
+        function processUmbrellaQR(umbrellaId) {
+            const umbrella = umbrellas.find(u => u.id === umbrellaId);
+            if (!umbrella) {
+                alert('傘が見つかりません');
+                return;
+            }
+            
+            stopQRScanner();
+            closeModal('qr-modal');
+            
+            if (umbrella.status === 'available') {
+                // 貸出処理
+                showUmbrellaRentalModal(umbrellaId);
+            } else {
+                // 返却処理
+                if (confirm(`傘「${umbrella.name}」を返却しますか？`)) {
+                    returnUmbrella(umbrellaId);
+                }
+            }
+        }
+
+        // QR Code Generation
+        function showUmbrellaQR(umbrellaId) {
+            const umbrella = umbrellas.find(u => u.id === umbrellaId);
+            if (!umbrella) {
+                alert('傘が見つかりません');
+                return;
+            }
+            
+            const qrData = JSON.stringify({
+                type: 'umbrella',
+                id: umbrellaId,
+                name: umbrella.name,
+                timestamp: Date.now()
+            });
+            
+            const displayContent = document.getElementById('qr-display-content');
+            displayContent.innerHTML = `
+                <h3>${umbrella.name}</h3>
+                <div id="qr-code-canvas-container"></div>
+                <p style="margin-top: 15px;"><strong>傘ID:</strong> ${umbrellaId}</p>
+                <p><strong>色:</strong> ${umbrella.color}</p>
+                <p><strong>サイズ:</strong> ${umbrella.size}</p>
+                <p><strong>ステータス:</strong> ${umbrella.status === 'available' ? '貸出可' : '貸出中'}</p>
+            `;
+            
+            // QRコード生成
+            QRCode.toCanvas(document.createElement('canvas'), qrData, {
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                margin: 2
+            }, function(error, canvas) {
+                if (error) {
+                    console.error('QRコード生成エラー:', error);
+                    alert('QRコードの生成に失敗しました');
+                } else {
+                    document.getElementById('qr-code-canvas-container').appendChild(canvas);
+                    openModal('qr-display-modal');
+                }
+            });
+        }
+
+        // Users
+        function displayUsers() {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = users.map(user => `
+                <div class="card" style="margin-bottom: 15px;">
+                    <p><strong>名前:</strong> ${user.name}</p>
+                    <p><strong>メール:</strong> ${user.email}</p>
+                    <p><strong>タイプ:</strong> ${user.type === 'admin' ? '管理者' : '一般ユーザー'}</p>
+                </div>
+            `).join('');
+        }
+
+        function showRegisterModal() {
+            openModal('register-modal');
+        }
+
+        function registerUser() {
+            const newUser = {
+                id: users.length + 1,
+                name: document.getElementById('register-name').value,
+                email: document.getElementById('register-email').value,
+                password: document.getElementById('register-password').value,
+                type: document.getElementById('register-type').value
+            };
+            
+            users.push(newUser);
+            closeModal('register-modal');
+            alert('ユーザーを登録しました');
+            
+            if (currentUser && currentUser.type === 'admin') {
+                displayUsers();
+            }
+        }
+
+        function showCSVModal() {
+            openModal('csv-modal');
+        }
+
+        function importCSV() {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                
+                lines.forEach(line => {
+                    if (line.trim()) {
+                        const [name, email, password, type] = line.split(',');
+                        users.push({
+                            id: users.length + 1,
+                            name: name.trim(),
+                            email: email.trim(),
+                            password: password.trim(),
+                            type: type.trim()
+                        });
+                    }
+                });
+                
+                displayUsers();
+                closeModal('csv-modal');
+                alert('CSVインポートが完了しました');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Hamburger Menu Toggle
+        function toggleHamburgerMenu() {
+            const modal = document.getElementById('hamburger-menu-modal');
+            const hamburger = document.getElementById('global-hamburger');
+            modal.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+
+        function closeHamburgerMenu() {
+            const modal = document.getElementById('hamburger-menu-modal');
+            const hamburger = document.getElementById('global-hamburger');
+            modal.classList.remove('active');
+            hamburger.classList.remove('active');
+        }
+
+        function navigateFromHamburger(section) {
+            closeHamburgerMenu();
+            if (section === 'menu') {
+                showMenu();
+            } else {
+                showSection(section);
+            }
+        }
+
+        function showAboutModal() {
+            openModal('about-modal');
+        }
+
+        // Modal Controls
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            
+            // カメラを停止
+            if (modalId === 'book-register-modal' && barcodeScanner) {
+                stopBarcodeScanner();
+                barcodeScanner = null;
+            } else if (modalId === 'qr-modal' && qrScanning) {
+                stopQRScanner();
+            }
+        }
+
+        // 傘の色の選択変更イベント
+        document.addEventListener('DOMContentLoaded', function() {
+            const umbrellaColorSelect = document.getElementById('umbrella-color');
+            if (umbrellaColorSelect) {
+                umbrellaColorSelect.addEventListener('change', function() {
+                    const customInput = document.getElementById('umbrella-color-custom');
+                    if (this.value === 'その他') {
+                        customInput.style.display = 'block';
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.value = '';
+                    }
+                });
+            }
+        });
+
+        // Toggle search filter visibility
+        function toggleSearchFilter() {
+            const content = document.getElementById('search-filter-content');
+            const icon = document.getElementById('search-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Toggle book list visibility
+        function toggleBookList() {
+            const content = document.getElementById('books-list');
+            const icon = document.getElementById('booklist-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'grid';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Toggle book register visibility
+        function toggleBookRegister() {
+            const content = document.getElementById('register-content');
+            const icon = document.getElementById('register-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Toggle umbrella list visibility
+        function toggleUmbrellaList() {
+            const content = document.getElementById('umbrellas-list');
+            const icon = document.getElementById('umbrellalist-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'grid';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Toggle umbrella register visibility
+        function toggleUmbrellaRegister() {
+            const content = document.getElementById('umbrella-register-content');
+            const icon = document.getElementById('umbrella-register-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Toggle owner field based on owner type
+        function toggleOwnerField() {
+            const ownerType = document.getElementById('book-owner-type').value;
+            const ownerField = document.getElementById('book-owner');
+            
+            if (ownerType === '会社所有') {
+                ownerField.value = '会社';
+                ownerField.disabled = true;
+                ownerField.style.backgroundColor = '#e0e0e0';
+            } else {
+                ownerField.value = currentUser ? currentUser.name : '';
+                ownerField.disabled = false;
+                ownerField.style.backgroundColor = '';
+            }
+        }
+
+        // Toggle bulk owner field based on owner type
+        function toggleBulkOwnerField() {
+            const ownerType = document.getElementById('bulk-owner-type').value;
+            const ownerField = document.getElementById('bulk-owner');
+            
+            if (ownerType === '会社所有') {
+                ownerField.value = '会社';
+                ownerField.disabled = true;
+                ownerField.style.backgroundColor = '#e0e0e0';
+            } else {
+                ownerField.value = currentUser ? currentUser.name : '';
+                ownerField.disabled = false;
+                ownerField.style.backgroundColor = '';
+            }
+        }
+
+        // Bulk Register Functions
+        function showBulkRegisterModal() {
+            document.getElementById('bulk-isbn-list').value = '';
+            document.getElementById('bulk-owner-type').value = '会社所有';
+            document.getElementById('bulk-location').value = '豊洲';
+            document.getElementById('bulk-owner').value = '会社';
+            document.getElementById('bulk-progress').style.display = 'none';
+            toggleBulkOwnerField();
+            openModal('bulk-register-modal');
+        }
+
+        async function bulkRegisterBooks() {
+            const isbnList = document.getElementById('bulk-isbn-list').value
+                .split('\n')
+                .map(isbn => isbn.trim().replace(/-/g, ''))
+                .filter(isbn => isbn.length > 0);
+            
+            if (isbnList.length === 0) {
+                alert('ISBNコードを入力してください');
+                return;
+            }
+
+            const ownerType = document.getElementById('bulk-owner-type').value;
+            const location = document.getElementById('bulk-location').value;
+            const owner = document.getElementById('bulk-owner').value;
+
+            const progressBar = document.getElementById('bulk-progress-bar');
+            const status = document.getElementById('bulk-status');
+            const progressContainer = document.getElementById('bulk-progress');
+            
+            progressContainer.style.display = 'block';
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (let i = 0; i < isbnList.length; i++) {
+                const isbn = isbnList[i];
+                const progress = ((i + 1) / isbnList.length * 100).toFixed(0);
+                
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+                status.textContent = `処理中: ${i + 1}/${isbnList.length} - ISBN: ${isbn}`;
+                
+                try {
+                    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+                    const data = await response.json();
+                    
+                    if (data.items && data.items.length > 0) {
+                        const bookInfo = data.items[0].volumeInfo;
+                        
+                        const newBook = {
+                            id: books.length + 1,
+                            isbn: isbn,
+                            title: bookInfo.title || 'タイトル不明',
+                            author: bookInfo.authors ? bookInfo.authors.join(', ') : '著者不明',
+                            genre: 'その他',
+                            publisher: bookInfo.publisher || '',
+                            date: bookInfo.publishedDate || '',
+                            ownerType: ownerType,
+                            location: location,
+                            owner: owner,
+                            imageUrl: bookInfo.imageLinks && bookInfo.imageLinks.thumbnail 
+                                ? bookInfo.imageLinks.thumbnail.replace('http://', 'https://') 
+                                : '',
+                            description: bookInfo.description || '',
+                            status: 'available',
+                            rentals: [],
+                            reviews: []
+                        };
+                        
+                        books.push(newBook);
+                        successCount++;
+                    } else {
+                        failCount++;
+                        console.warn(`ISBN ${isbn}: 書籍情報が見つかりませんでした`);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`ISBN ${isbn}: エラー`, error);
+                }
+                
+                // API制限を考慮して少し待機
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            status.textContent = `完了: 成功 ${successCount}件 / 失敗 ${failCount}件`;
+            displayBooks();
+            
+            setTimeout(() => {
+                closeModal('bulk-register-modal');
+                alert(`一括登録が完了しました\n成功: ${successCount}件\n失敗: ${failCount}件`);
+            }, 2000);
+        }
+
+        // Export/Import Functions
+        function exportBooks() {
+            if (books.length === 0) {
+                alert('エクスポートする書籍がありません');
+                return;
+            }
+            
+            // CSV形式でエクスポート
+            const csvHeader = 'ISBN,タイトル,著者,ジャンル,出版社,発売日,所有者タイプ,拠点,所有者名,概要\n';
+            const csvContent = books.map(book => {
+                return [
+                    book.isbn || '',
+                    `"${book.title || ''}"`,
+                    `"${book.author || ''}"`,
+                    book.genre || '',
+                    `"${book.publisher || ''}"`,
+                    book.date || '',
+                    book.ownerType || '',
+                    book.location || '',
+                    `"${book.owner || ''}"`,
+                    `"${(book.description || '').replace(/"/g, '""')}"`
+                ].join(',');
+            }).join('\n');
+            
+            const csvData = csvHeader + csvContent;
+            
+            // ファイルダウンロード
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `books_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`${books.length}件の書籍データをエクスポートしました`);
+        }
+
+        function showImportModal() {
+            document.getElementById('import-file').value = '';
+            document.getElementById('import-format').value = 'csv';
+            openModal('import-modal');
+        }
+
+        function importBooks() {
+            const fileInput = document.getElementById('import-file');
+            const format = document.getElementById('import-format').value;
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                let importedBooks = [];
+                let successCount = 0;
+                let errorCount = 0;
+                
+                try {
+                    if (format === 'csv') {
+                        importedBooks = parseCSV(content);
+                    } else if (format === 'json') {
+                        importedBooks = JSON.parse(content);
+                    }
+                    
+                    // データ検証とインポート
+                    importedBooks.forEach((bookData, index) => {
+                        try {
+                            const newBook = {
+                                id: books.length + successCount + 1,
+                                isbn: bookData.isbn || bookData.ISBN || '',
+                                title: bookData.title || bookData.タイトル || 'タイトル不明',
+                                author: bookData.author || bookData.著者 || '著者不明',
+                                genre: bookData.genre || bookData.ジャンル || 'その他',
+                                publisher: bookData.publisher || bookData.出版社 || '',
+                                date: bookData.date || bookData.発売日 || '',
+                                ownerType: bookData.ownerType || bookData.所有者タイプ || '会社所有',
+                                location: bookData.location || bookData.拠点 || '豊洲',
+                                owner: bookData.owner || bookData.所有者名 || '会社',
+                                imageUrl: bookData.imageUrl || '',
+                                description: bookData.description || bookData.概要 || '',
+                                status: 'available',
+                                rentals: [],
+                                reviews: []
+                            };
+                            
+                            books.push(newBook);
+                            successCount++;
+                        } catch (error) {
+                            console.error(`行 ${index + 1} のインポートエラー:`, error);
+                            errorCount++;
+                        }
+                    });
+                    
+                    displayBooks();
+                    closeModal('import-modal');
+                    alert(`インポートが完了しました\n成功: ${successCount}件\nエラー: ${errorCount}件`);
+                    
+                } catch (error) {
+                    console.error('インポートエラー:', error);
+                    alert('ファイルの読み込みに失敗しました。ファイル形式を確認してください。');
+                }
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSV(csvContent) {
+            const lines = csvContent.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = parseCSVLine(line);
+                const rowData = {};
+                
+                headers.forEach((header, index) => {
+                    if (values[index] !== undefined) {
+                        rowData[header] = values[index].replace(/^"|"$/g, '').replace(/""/g, '"');
+                    }
+                });
+                
+                data.push(rowData);
+            }
+            
+            return data;
+        }
+
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            values.push(current);
+            return values;
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
