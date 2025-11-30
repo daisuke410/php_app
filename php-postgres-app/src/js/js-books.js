@@ -15,9 +15,9 @@ function displayBooks(filteredBooks = null) {
     const booksToDisplay = filteredBooks || books;
     const booksList = document.getElementById('books-list');
     const stats = document.getElementById('books-stats');
-    
+
     stats.textContent = `登録書籍数: ${books.length}冊`;
-    
+
     booksList.innerHTML = booksToDisplay.map(book => `
         <div class="book-item" onclick="showBookDetail(${book.id})">
             <img src="${book.image_url || book.imageUrl || 'https://via.placeholder.com/150x220/8a9a7b/ffffff?text=No+Image'}" 
@@ -37,30 +37,30 @@ function filterBooks() {
     const rating = document.getElementById('filter-rating').value;
     const description = document.getElementById('filter-description').value.toLowerCase();
     const year = document.getElementById('filter-year').value;
-    
+
     let filtered = books;
-    
+
     if (title) {
         filtered = filtered.filter(b => b.title.toLowerCase().includes(title));
     }
-    
+
     if (genre) {
         filtered = filtered.filter(b => b.genre === genre);
     }
-    
+
     if (rating) {
         filtered = filtered.filter(b => {
             const avgRating = getAverageRating(b);
             return avgRating >= parseInt(rating);
         });
     }
-    
+
     if (description) {
-        filtered = filtered.filter(b => 
+        filtered = filtered.filter(b =>
             b.description && b.description.toLowerCase().includes(description)
         );
     }
-    
+
     if (year) {
         filtered = filtered.filter(b => {
             const dateField = b.publish_date || b.date;
@@ -69,7 +69,7 @@ function filterBooks() {
             return bookYear === parseInt(year);
         });
     }
-    
+
     displayBooks(filtered);
 }
 
@@ -91,34 +91,53 @@ function getAverageRating(book) {
 function showBookDetail(bookId) {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
-    
+
     const avgRating = getAverageRating(book);
     const stars = '★'.repeat(Math.round(avgRating)) + '☆'.repeat(5 - Math.round(avgRating));
-    
+
     const ownerType = book.owner_type || book.ownerType;
     const imageUrl = book.image_url || book.imageUrl;
-    
+
     const content = `
         <h2>${book.title}</h2>
-        <img src="${imageUrl || 'https://via.placeholder.com/200x280'}" 
-             style="max-width: 200px; height: auto; margin: 15px 0; border-radius: 8px;">
-        <p><strong>著者:</strong> ${book.author}</p>
-        <p><strong>ジャンル:</strong> ${book.genre}</p>
-        <p><strong>出版社:</strong> ${book.publisher}</p>
-        <p><strong>ISBN:</strong> ${book.isbn}</p>
-        <p><strong>所有者:</strong> ${ownerType} - ${book.owner}</p>
-        <p><strong>拠点:</strong> ${book.location}</p>
-        <p><strong>ステータス:</strong> ${book.status === 'available' ? '貸出可' : '貸出中'}</p>
-        <p><strong>平均評価:</strong> ${stars} (${avgRating.toFixed(1)})</p>
-        ${book.description ? `<p><strong>概要:</strong> ${book.description}</p>` : ''}
+        
+        <div class="book-detail-header">
+            <div>
+                <img src="${imageUrl || 'https://via.placeholder.com/250x350/8a9a7b/ffffff?text=No+Image'}" 
+                     alt="${book.title}" 
+                     class="book-detail-image"
+                     onclick="showImageLightbox('${imageUrl || 'https://via.placeholder.com/250x350/8a9a7b/ffffff?text=No+Image'}', '${book.title.replace(/'/g, "\\'")}')">
+            </div>
+            <div class="book-detail-info">
+                <p><strong>著者:</strong> ${book.author}</p>
+                <p><strong>ジャンル:</strong> ${book.genre}</p>
+                <p><strong>出版社:</strong> ${book.publisher}</p>
+                <p><strong>ISBN:</strong> ${book.isbn}</p>
+                <p><strong>所有者:</strong> ${ownerType} - ${book.owner}</p>
+                <p><strong>拠点:</strong> ${book.location}</p>
+                <p><strong>ステータス:</strong> 
+                    <span class="${book.status === 'available' ? 'status-available' : 'status-rented'}">
+                        ${book.status === 'available' ? '貸出可' : '貸出中'}
+                    </span>
+                </p>
+                <p><strong>平均評価:</strong> ${stars} (${avgRating.toFixed(1)})</p>
+            </div>
+        </div>
+        
+        ${book.description ? `
+            <div class="book-description">
+                <strong>📖 概要</strong>
+                <p>${book.description}</p>
+            </div>
+        ` : ''}
         
         <div class="book-detail-actions">
-            ${ownerType === '個人所有（貸出不可）' ? 
-                `<p style="color: #999; font-style: italic;">※ この書籍は貸出不可です</p>` :
-                book.status === 'available' ? 
-                    `<button class="btn btn-primary" onclick="showRentalModal(${book.id})">貸出</button>` : 
-                    `<button class="btn btn-success" onclick="returnBook(${book.id})">返却</button>`
-            }
+            ${ownerType === '個人所有（貸出不可）' ?
+            `<p style="color: #999; font-style: italic;">※ この書籍は貸出不可です</p>` :
+            book.status === 'available' ?
+                `<button class="btn btn-primary" onclick="showRentalModal(${book.id})">貸出</button>` :
+                `<button class="btn btn-success" onclick="returnBook(${book.id})">返却</button>`
+        }
             <button class="btn btn-secondary" onclick="showReviewModal(${book.id})">レビュー追加</button>
             <button class="btn btn-secondary" onclick="showEditBookModal(${book.id})">編集</button>
             <div class="delete-link" onclick="deleteBook(${book.id})">この書籍を削除</div>
@@ -126,18 +145,36 @@ function showBookDetail(bookId) {
         
         <div class="reviews-section">
             <h3 style="color: var(--color-primary); margin-bottom: 15px;">レビュー (${book.reviews.length}件)</h3>
-            ${book.reviews.map(r => `
+            ${book.reviews.map(r => {
+            // Format timestamp for display
+            let timestamp = '';
+            if (r.created_at) {
+                const date = new Date(r.created_at);
+                timestamp = date.toLocaleString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } else if (r.date) {
+                timestamp = r.date;
+            }
+
+            return `
                 <div class="review-item">
                     <div class="review-header">
                         <span>${r.reviewer_name || r.name}</span>
-                        <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                        <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
                     </div>
+                    ${timestamp ? `<div style="font-size: 0.85rem; color: #666; margin: 5px 0;">${timestamp}</div>` : ''}
                     <div>${r.comment}</div>
                 </div>
-            `).join('')}
+                `;
+        }).join('')}
         </div>
     `;
-    
+
     document.getElementById('book-detail-content').innerHTML = content;
     openModal('book-detail-modal');
 }
@@ -172,7 +209,7 @@ async function registerBook() {
         imageUrl: document.getElementById('book-image-url').value,
         description: document.getElementById('book-description').value
     };
-    
+
     try {
         const result = await apiCall('register_book', 'POST', bookData);
         if (result.success) {
@@ -189,7 +226,7 @@ async function registerBook() {
 function showEditBookModal(bookId) {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
-    
+
     document.getElementById('edit-book-id').value = book.id;
     document.getElementById('edit-book-title').value = book.title;
     document.getElementById('edit-book-author').value = book.author;
@@ -198,7 +235,7 @@ function showEditBookModal(bookId) {
     document.getElementById('edit-book-owner-type').value = book.owner_type || book.ownerType;
     document.getElementById('edit-book-location').value = book.location;
     document.getElementById('edit-book-owner').value = book.owner;
-    
+
     closeModal('book-detail-modal');
     openModal('book-edit-modal');
 }
@@ -214,7 +251,7 @@ async function updateBook() {
         location: document.getElementById('edit-book-location').value,
         owner: document.getElementById('edit-book-owner').value
     };
-    
+
     try {
         const result = await apiCall('update_book', 'POST', bookData);
         if (result.success) {
@@ -230,7 +267,7 @@ async function updateBook() {
 
 async function deleteBook(bookId) {
     if (!confirm('この書籍を削除してもよろしいですか?')) return;
-    
+
     try {
         const result = await apiCall('delete_book', 'POST', { id: bookId });
         if (result.success) {
@@ -258,7 +295,7 @@ async function rentBook() {
         borrower: document.getElementById('rental-borrower').value,
         returnDate: document.getElementById('rental-return-date').value
     };
-    
+
     try {
         const result = await apiCall('rent_book', 'POST', rentalData);
         if (result.success) {
@@ -302,7 +339,7 @@ async function addReview() {
         rating: parseInt(document.getElementById('review-rating').value),
         comment: document.getElementById('review-comment').value
     };
-    
+
     try {
         const result = await apiCall('add_review', 'POST', reviewData);
         if (result.success) {
@@ -321,12 +358,12 @@ async function exportBooks() {
         alert('エクスポートする書籍がありません');
         return;
     }
-    
+
     const csvHeader = 'ISBN,タイトル,著者,ジャンル,出版社,発売日,所有者タイプ,拠点,所有者名,概要\n';
     const csvContent = books.map(book => {
         const publishDate = book.publish_date || book.date || '';
         const ownerType = book.owner_type || book.ownerType || '';
-        
+
         return [
             book.isbn || '',
             `"${(book.title || '').replace(/"/g, '""')}"`,
@@ -340,9 +377,9 @@ async function exportBooks() {
             `"${(book.description || '').replace(/"/g, '""')}"`
         ].join(',');
     }).join('\n');
-    
+
     const csvData = csvHeader + csvContent;
-    
+
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -352,7 +389,7 @@ async function exportBooks() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     alert(`${books.length}件の書籍データをエクスポートしました`);
 }
 
@@ -366,26 +403,26 @@ async function importBooks() {
     const fileInput = document.getElementById('import-file');
     const format = document.getElementById('import-format').value;
     const file = fileInput.files[0];
-    
+
     if (!file) {
         alert('ファイルを選択してください');
         return;
     }
-    
+
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         const content = e.target.result;
         let importedBooks = [];
         let successCount = 0;
         let errorCount = 0;
-        
+
         try {
             if (format === 'csv') {
                 importedBooks = parseCSV(content);
             } else if (format === 'json') {
                 importedBooks = JSON.parse(content);
             }
-            
+
             for (const bookData of importedBooks) {
                 try {
                     const newBook = {
@@ -401,7 +438,7 @@ async function importBooks() {
                         imageUrl: bookData.imageUrl || '',
                         description: bookData.description || bookData.概要 || ''
                     };
-                    
+
                     const result = await apiCall('register_book', 'POST', newBook);
                     if (result.success) {
                         successCount++;
@@ -409,21 +446,28 @@ async function importBooks() {
                         errorCount++;
                     }
                 } catch (error) {
-                    console.error('書籍のインポートエラー:', error);
+                    console.error('行 ' + (index + 1) + ' のインポートエラー:', error);
                     errorCount++;
                 }
-            }
-            
-            await loadBooks();
+            }));
+
             displayBooks();
             closeModal('import-modal');
-            alert(`インポートが完了しました\n成功: ${successCount}件\nエラー: ${errorCount}件`);
-            
+            alert('インポートが完了しました\n成功: ' + successCount + '件\nエラー: ' + errorCount + '件');
+
         } catch (error) {
             console.error('インポートエラー:', error);
             alert('ファイルの読み込みに失敗しました。ファイル形式を確認してください。');
         }
     };
-    
+
     reader.readAsText(file, 'UTF-8');
+}
+
+// Image Lightbox
+function showImageLightbox(imageUrl, altText) {
+    const lightboxImage = document.getElementById('lightbox-image');
+    lightboxImage.src = imageUrl;
+    lightboxImage.alt = altText;
+    openModal('image-lightbox-modal');
 }

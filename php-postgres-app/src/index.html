@@ -19,9 +19,14 @@
             <span></span>
         </button>
 
-        <header onclick="toggleHamburgerMenu()" style="cursor: pointer;">
+        <header onclick="toggleHamburgerMenu()" style="cursor: pointer; position: relative;">
             <h1>📚☂️ BookBrella</h1>
             <p class="subtitle">書籍と傘を通じて、知識と助け合いを共有するプラットフォーム</p>
+            <div id="user-info-display"
+                style="position: absolute; top: 20px; right: 20px; font-size: 0.9rem; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 8px; display: none;">
+                <span id="user-name-display"></span> <span id="user-role-display"
+                    style="font-size: 0.8rem; opacity: 0.9;"></span>
+            </div>
         </header>
 
         <!-- Login Page -->
@@ -41,6 +46,8 @@
                     style="width: 100%; margin: 0;">新規ユーザー登録</button>
                 <button class="btn btn-success" onclick="devLogin()"
                     style="width: 100%; margin: 0;">開発用ログイン（管理者）</button>
+                <button class="btn btn-success" onclick="devLoginGeneral()"
+                    style="width: 100%; margin: 0; background-color: #6d8a6d;">開発用ログイン（一般ユーザ）</button>
             </div>
         </div>
 
@@ -186,11 +193,10 @@
 
                 <!-- 貸出中一覧 -->
                 <div class="card" style="margin-bottom: 25px;">
-                    <h3 style="color: var(--color-primary); margin-bottom: 15px; cursor: pointer; user-select: none;"
-                        onclick="toggleRentalList()">
-                        📋 現在貸出中の傘 <span id="rental-toggle-icon">▼</span>
+                    <h3 style="color: var(--color-primary); margin-bottom: 15px;">
+                        📋 現在貸出中の傘
                     </h3>
-                    <div id="rental-list-content" style="display: none;">
+                    <div id="rental-list-content">
                         <div id="current-rentals-list"></div>
                     </div>
                 </div>
@@ -237,7 +243,7 @@
                                 <label>コンディション</label>
                                 <select id="filter-umbrella-condition">
                                     <option value="">すべて</option>
-                                    <option value="正常">正常</option>
+                                    <option value="利用可能">利用可能</option>
                                     <option value="メンテナンス中">メンテナンス中</option>
                                     <option value="破損">破損</option>
                                 </select>
@@ -666,7 +672,7 @@
                     <label>パスワード</label>
                     <input type="password" id="register-password">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="register-type-group">
                     <label>ユーザータイプ</label>
                     <select id="register-type">
                         <option value="general">一般ユーザー</option>
@@ -768,6 +774,15 @@
                 </div>
                 <button class="btn btn-primary" onclick="importBooks()">インポート開始</button>
                 <button class="btn btn-cancel" onclick="closeModal('import-modal')">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- Image Lightbox Modal -->
+        <div id="image-lightbox-modal" class="modal">
+            <button class="lightbox-close" onclick="closeModal('image-lightbox-modal')">×</button>
+            <div class="modal-content">
+                <img id="lightbox-image" class="lightbox-image" src="" alt=""
+                    onclick="closeModal('image-lightbox-modal')">
             </div>
         </div>
 

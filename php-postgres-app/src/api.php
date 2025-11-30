@@ -71,7 +71,8 @@ try {
                                'name', r.reviewer_name,
                                'rating', r.rating,
                                'comment', r.comment,
-                               'date', r.review_date
+                               'date', r.review_date,
+                               'created_at', r.created_at
                            )) FILTER (WHERE r.id IS NOT NULL), '[]') as reviews
                     FROM books b
                     LEFT JOIN book_rentals br ON b.id = br.book_id

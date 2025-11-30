@@ -20,7 +20,8 @@
     },
     "forwardPorts": [
         80,
-        5432
+        5432,
+        8000
     ],
     "postCreateCommand": "composer install || true"
 }

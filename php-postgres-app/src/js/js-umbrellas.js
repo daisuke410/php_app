@@ -34,7 +34,7 @@ async function loadUmbrellas() {
             umbrellas = result.umbrellas.map(u => ({
                 ...u,
                 umbrellaType: u.umbrellaType || u.umbrella_type || '長傘',
-                condition: u.condition || '正常'
+                condition: u.condition || '利用可能'
             }));
             await loadUmbrellaStats();
             displayUmbrellas();
@@ -62,8 +62,25 @@ function updateStatsDisplay() {
 
     document.getElementById('stats-total').textContent = umbrellaStats.total || 0;
     document.getElementById('stats-available').textContent = umbrellaStats.available || 0;
-    document.getElementById('stats-rented').textContent = umbrellaStats.rented || 0;
-    document.getElementById('stats-overdue').textContent = umbrellaStats.overdueRentals?.length || 0;
+
+    // 一般ユーザーの場合は自分の貸出のみカウント
+    if (currentUser && currentUser.type !== 'admin') {
+        const myRentals = umbrellas.filter(u =>
+            u.status === 'rented' &&
+            u.rentals &&
+            u.rentals.length > 0 &&
+            u.rentals[0].borrower === currentUser.name
+        );
+
+        const myOverdueRentals = myRentals.filter(u => checkIfOverdue(u));
+
+        document.getElementById('stats-rented').textContent = myRentals.length;
+        document.getElementById('stats-overdue').textContent = myOverdueRentals.length;
+    } else {
+        // 管理者は全体の統計を表示
+        document.getElementById('stats-rented').textContent = umbrellaStats.rented || 0;
+        document.getElementById('stats-overdue').textContent = umbrellaStats.overdueRentals?.length || 0;
+    }
 }
 
 function displayUmbrellas(filtered = null) {
@@ -73,6 +90,21 @@ function displayUmbrellas(filtered = null) {
     list.innerHTML = toDisplay.map(umbrella => {
         const isOverdue = checkIfOverdue(umbrella);
         const conditionBadge = getConditionBadge(umbrella.condition);
+
+        let statusText = umbrella.status === 'available' ? '貸出可' : '貸出中';
+        let showRentalInfo = false;
+
+        // 貸出情報の表示判定
+        if (umbrella.status === 'rented' && umbrella.rentals && umbrella.rentals.length > 0) {
+            const isMyRental = currentUser && umbrella.rentals[0].borrower === currentUser.name;
+
+            if (isMyRental) {
+                statusText = '貸出中（あなた）';
+                showRentalInfo = true;
+            } else if (currentUser && currentUser.type === 'admin') {
+                showRentalInfo = true;
+            }
+        }
 
         return `
         <div class="umbrella-item" style="cursor: pointer;" onclick="showUmbrellaDetail(${umbrella.id})">
@@ -85,19 +117,16 @@ function displayUmbrellas(filtered = null) {
             ${umbrella.description ? `<p><strong>特徴:</strong> ${umbrella.description}</p>` : ''}
             <p><strong>ステータス:</strong> 
                 <span class="${umbrella.status === 'available' ? 'status-available' : 'status-rented'}">
-                    ${umbrella.status === 'available' ? '貸出可' : '貸出中'}
+                    ${statusText}
                 </span>
                 ${isOverdue ? '<span style="background:var(--autumn-rust); color:white; padding:2px 8px; border-radius:10px; font-size:0.8rem; margin-left:5px;">返却遅延</span>' : ''}
             </p>
-            ${umbrella.rentals && umbrella.rentals.length > 0 ? `
+            ${showRentalInfo ? `
                 <div style="background: rgba(184, 118, 83, 0.1); padding: 10px; border-radius: 6px; margin: 10px 0;">
                     <p style="margin: 3px 0;"><strong>貸出者:</strong> ${umbrella.rentals[0].borrower}</p>
                     <p style="margin: 3px 0;"><strong>返却予定:</strong> ${umbrella.rentals[0].returnDate || '未設定'}</p>
                 </div>
             ` : ''}
-            <div style="margin-top: 10px;">
-                <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 6px 12px;" onclick="event.stopPropagation(); showUmbrellaQR(${umbrella.id})">QR表示</button>
-            </div>
         </div>
         `;
     }).join('');
@@ -117,7 +146,7 @@ function checkIfOverdue(umbrella) {
 
 function getConditionBadge(condition) {
     const badges = {
-        '正常': '<span style="background:var(--autumn-sage); color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem;">正常</span>',
+        '利用可能': '<span style="background:var(--autumn-sage); color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem;">利用可能</span>',
         'メンテナンス中': '<span style="background:var(--autumn-clay); color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem;">メンテナンス中</span>',
         '破損': '<span style="background:var(--autumn-rust); color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem;">破損</span>',
         '紛失': '<span style="background:var(--autumn-charcoal); color:white; padding:3px 10px; border-radius:12px; font-size:0.8rem;">紛失</span>'
@@ -126,11 +155,22 @@ function getConditionBadge(condition) {
 }
 
 function updateCurrentRentals() {
-    const rentedUmbrellas = umbrellas.filter(u => u.status === 'rented');
+    let rentedUmbrellas = umbrellas.filter(u => u.status === 'rented');
     const list = document.getElementById('current-rentals-list');
 
+    // 一般ユーザーの場合は自分の貸出のみ表示
+    if (currentUser && currentUser.type !== 'admin') {
+        rentedUmbrellas = rentedUmbrellas.filter(u =>
+            u.rentals && u.rentals.length > 0 && u.rentals[0].borrower === currentUser.name
+        );
+    }
+
     if (rentedUmbrellas.length === 0) {
-        list.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">現在貸出中の傘はありません</p>';
+        if (currentUser && currentUser.type !== 'admin') {
+            list.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">現在借りている傘はありません</p>';
+        } else {
+            list.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">現在貸出中の傘はありません</p>';
+        }
         return;
     }
 
@@ -248,7 +288,7 @@ function showUmbrellaRegisterModal() {
         }
 
         setVal('umbrella-size', '中');
-        setVal('umbrella-condition', '正常');
+        setVal('umbrella-condition', '利用可能');
         setVal('umbrella-description', '');
         setVal('umbrella-note', '');
 

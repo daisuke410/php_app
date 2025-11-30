@@ -27,6 +27,19 @@ function showRegisterModal() {
     document.getElementById('register-email').value = '';
     document.getElementById('register-password').value = '';
     document.getElementById('register-type').value = 'general';
+
+    // ログインしていない場合、またはログインユーザーが管理者でない場合は
+    // ユーザータイプ選択フィールドを非表示にする
+    const typeGroup = document.getElementById('register-type-group');
+    if (!currentUser || currentUser.type !== 'admin') {
+        // ログインしていない場合は一般ユーザーのみ登録可能
+        typeGroup.style.display = 'none';
+        document.getElementById('register-type').value = 'general';
+    } else {
+        // 管理者の場合は選択可能
+        typeGroup.style.display = 'block';
+    }
+
     openModal('register-modal');
 }
 
@@ -37,13 +50,13 @@ async function registerUser() {
         password: document.getElementById('register-password').value,
         type: document.getElementById('register-type').value
     };
-    
+
     try {
         const result = await apiCall('register_user', 'POST', userData);
         if (result.success) {
             closeModal('register-modal');
             alert('ユーザーを登録しました');
-            
+
             if (currentUser && currentUser.type === 'admin') {
                 await loadUsers();
                 displayUsers();
@@ -61,24 +74,24 @@ function showCSVModal() {
 function importCSV() {
     const fileInput = document.getElementById('csv-file');
     const file = fileInput.files[0];
-    
+
     if (!file) {
         alert('ファイルを選択してください');
         return;
     }
-    
+
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         const text = e.target.result;
         const lines = text.split('\n');
-        
+
         let successCount = 0;
         let errorCount = 0;
-        
+
         for (const line of lines) {
             if (line.trim()) {
                 const [name, email, password, type] = line.split(',').map(s => s.trim());
-                
+
                 try {
                     await apiCall('register_user', 'POST', { name, email, password, type });
                     successCount++;
@@ -87,12 +100,12 @@ function importCSV() {
                 }
             }
         }
-        
+
         await loadUsers();
         displayUsers();
         closeModal('csv-modal');
         alert(`CSVインポートが完了しました\n成功: ${successCount}件\nエラー: ${errorCount}件`);
     };
-    
+
     reader.readAsText(file);
 }

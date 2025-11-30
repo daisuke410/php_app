@@ -160,11 +160,6 @@ select#umbrella-color {
     margin-bottom: 0;
 }
 
-outline: none;
-border-color: var(--color-primary);
-box-shadow: 0 0 0 3px rgba(125, 60, 76, 0.1);
-}
-
 input:focus,
 select:focus,
 textarea:focus {
@@ -312,6 +307,7 @@ textarea:focus {
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    padding: 20px;
 }
 
 .modal.active {
@@ -328,6 +324,12 @@ textarea:focus {
     overflow-y: auto;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
     border: 2px solid var(--color-border);
+}
+
+/* 書籍詳細モーダルは幅を広く */
+#book-detail-modal .modal-content {
+    max-width: 900px;
+    width: 95%;
 }
 
 .modal-content h2 {
@@ -493,22 +495,6 @@ textarea:focus {
 }
 
 /* QR Code Styles */
-position: relative;
-width: 100%;
-max-width: 400px;
-height: 400px;
-margin: 20px auto;
-background: #f0f0f0;
-border-radius: 12px;
-border: 3px solid var(--color-primary);
-overflow: hidden;
-}
-
-width: 100%;
-height: 100%;
-object-fit: cover;
-}
-
 .qr-code-display {
     text-align: center;
     margin: 20px 0;
@@ -674,6 +660,140 @@ object-fit: cover;
     color: var(--autumn-copper);
 }
 
+/* Book Detail Modal Specific Styles */
+.book-detail-header {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 30px;
+    margin-bottom: 25px;
+}
+
+.book-detail-image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    object-fit: cover;
+}
+
+.book-detail-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.book-detail-info p {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.book-detail-info strong {
+    color: var(--color-primary);
+    min-width: 100px;
+    display: inline-block;
+}
+
+.book-description {
+    background: rgba(138, 154, 123, 0.08);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border-left: 4px solid var(--autumn-sage);
+}
+
+.book-description strong {
+    display: block;
+    color: var(--color-primary);
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.book-description p {
+    line-height: 1.8;
+    color: var(--color-text);
+    margin: 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .book-detail-header {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .book-detail-image {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+
+    #book-detail-modal .modal-content {
+        max-width: 95%;
+        padding: 25px;
+    }
+}
+
+/* Image Lightbox */
+.book-detail-image {
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-detail-image:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+#image-lightbox-modal {
+    z-index: 2000;
+}
+
+#image-lightbox-modal .modal-content {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    max-width: 90vw;
+    max-height: 90vh;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-text);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 2001;
+}
+
+.lightbox-close:hover {
+    background: white;
+    transform: scale(1.1);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header h1 {
@@ -688,4 +808,3 @@ object-fit: cover;
         grid-template-columns: 1fr;
     }
 }
-

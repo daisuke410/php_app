@@ -31,7 +31,11 @@ function closeModal(modalId) {
 // Close modal when clicking outside
 window.onclick = function (event) {
     if (event.target.classList.contains('modal')) {
-        event.target.style.display = 'none';
+        // モーダルの背景をクリックした場合、そのモーダルを閉じる
+        const modalId = event.target.id;
+        if (modalId) {
+            closeModal(modalId);
+        }
     }
 }
 
@@ -87,9 +91,23 @@ function devLogin() {
     showMenu();
 }
 
+function devLoginGeneral() {
+    // 開発用：一般ユーザーで自動ログイン
+    currentUser = users.find(u => u.type === 'general');
+    showMainApp();
+    showMenu();
+}
+
 function logout() {
     currentUser = null;
     closeHamburgerMenu();
+
+    // ユーザー情報表示を隠す
+    const userInfoDisplay = document.getElementById('user-info-display');
+    if (userInfoDisplay) {
+        userInfoDisplay.style.display = 'none';
+    }
+
     showLoginPage();
 }
 
@@ -103,6 +121,19 @@ function showLoginPage() {
 function showMainApp() {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
+
+    // ユーザー情報の表示
+    if (currentUser) {
+        const userInfoDisplay = document.getElementById('user-info-display');
+        const userNameDisplay = document.getElementById('user-name-display');
+        const userRoleDisplay = document.getElementById('user-role-display');
+
+        if (userInfoDisplay && userNameDisplay && userRoleDisplay) {
+            userNameDisplay.textContent = currentUser.name;
+            userRoleDisplay.textContent = currentUser.type === 'admin' ? '(管理者)' : '(一般)';
+            userInfoDisplay.style.display = 'block';
+        }
+    }
 
     if (currentUser.type === 'admin') {
         document.getElementById('admin-users-btn').classList.remove('hidden');
@@ -1169,14 +1200,14 @@ async function bulkRegisterBooks() {
         status.textContent = `処理中: ${i + 1}/${isbnList.length} - ISBN: ${isbn}`;
 
         try {
+            // Google Books APIから書籍情報を取得
             const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
             const data = await response.json();
 
             if (data.items && data.items.length > 0) {
                 const bookInfo = data.items[0].volumeInfo;
 
-                const newBook = {
-                    id: books.length + 1,
+                const bookData = {
                     isbn: isbn,
                     title: bookInfo.title || 'タイトル不明',
                     author: bookInfo.authors ? bookInfo.authors.join(', ') : '著者不明',
@@ -1189,14 +1220,28 @@ async function bulkRegisterBooks() {
                     imageUrl: bookInfo.imageLinks && bookInfo.imageLinks.thumbnail
                         ? bookInfo.imageLinks.thumbnail.replace('http://', 'https://')
                         : '',
-                    description: bookInfo.description || '',
-                    status: 'available',
-                    rentals: [],
-                    reviews: []
+                    description: bookInfo.description || ''
                 };
 
-                books.push(newBook);
-                successCount++;
+                // データベースに保存
+                try {
+                    const saveResponse = await fetch('../api.php?action=register_book', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bookData)
+                    });
+                    const saveResult = await saveResponse.json();
+
+                    if (saveResult.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        console.error(`ISBN ${isbn}: データベース保存失敗`, saveResult.error);
+                    }
+                } catch (saveError) {
+                    failCount++;
+                    console.error(`ISBN ${isbn}: データベース保存エラー`, saveError);
+                }
             } else {
                 failCount++;
                 console.warn(`ISBN ${isbn}: 書籍情報が見つかりませんでした`);
@@ -1211,6 +1256,9 @@ async function bulkRegisterBooks() {
     }
 
     status.textContent = `完了: 成功 ${successCount}件 / 失敗 ${failCount}件`;
+
+    // データベースから最新の書籍リストを再読み込み
+    await loadBooks();
     displayBooks();
 
     setTimeout(() => {
