@@ -19,7 +19,7 @@ async function apiCall(action, method = 'GET', data = null) {
         options.body = JSON.stringify(data);
     }
 
-    const response = await fetch(`api.php?action=${action}`, options);
+    const response = await fetch(`../api.php?action=${action}`, options);
     return await response.json();
 }
 

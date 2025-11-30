@@ -7,7 +7,7 @@ let filteredUmbrellas = null;
 // 傘データをAPIから取得
 async function loadUmbrellas() {
     try {
-        const response = await fetch('api.php?action=get_umbrellas');
+        const response = await fetch('../api.php?action=get_umbrellas');
         const result = await response.json();
         if (result.success) {
             umbrellas = result.umbrellas.map(u => ({
@@ -27,7 +27,7 @@ async function loadUmbrellas() {
 // 統計情報を取得
 async function loadUmbrellaStats() {
     try {
-        const response = await fetch('api.php?action=get_umbrella_stats');
+        const response = await fetch('../api.php?action=get_umbrella_stats');
         const result = await response.json();
         if (result.success) {
             umbrellaStats = result.stats;
