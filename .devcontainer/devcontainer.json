@@ -18,7 +18,7 @@
 
 	"forwardPorts": [8080, 5432],
 
-	"postCreateCommand": "sudo service postgresql start && sleep 5 && sudo -u postgres psql -c 'CREATE DATABASE appdb;' || true && sudo -u postgres psql -c \"CREATE USER appuser WITH PASSWORD 'password';\" || true && sudo -u postgres psql -c 'GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;' || true && cd /workspace/php-postgres-app && export DB_HOST=localhost DB_NAME=appdb DB_USER=appuser DB_PASSWORD=password && php src/init_db.php && php src/run_migration.php",
+	"postCreateCommand": "bash -c 'echo \"host all all 127.0.0.1/32 md5\" >> /etc/postgresql/*/main/pg_hba.conf && echo \"local all all trust\" >> /etc/postgresql/*/main/pg_hba.conf && sudo service postgresql start && sleep 5 && sudo -u postgres psql -c \"CREATE DATABASE appdb;\" || true && sudo -u postgres psql -c \"CREATE USER appuser WITH PASSWORD \\\"password\\\";\" || true && sudo -u postgres psql -c \"GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;\" || true && cd /workspace/php-postgres-app && export DB_HOST=localhost DB_NAME=appdb DB_USER=appuser DB_PASSWORD=password && php src/init_db.php && php src/run_migration.php'",
 
 	"remoteUser": "root"
 }

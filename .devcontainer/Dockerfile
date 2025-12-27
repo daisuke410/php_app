@@ -22,9 +22,7 @@ RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory-limit.ini \
     && echo "upload_max_filesize=50M" > /usr/local/etc/php/conf.d/upload-limit.ini \
     && echo "post_max_size=50M" >> /usr/local/etc/php/conf.d/upload-limit.ini
 
-# Configure PostgreSQL to allow local connections
-RUN echo "host all all 127.0.0.1/32 md5" >> /etc/postgresql/*/main/pg_hba.conf \
-    && echo "local all all trust" >> /etc/postgresql/*/main/pg_hba.conf
+# Configure PostgreSQL to allow local connections will be done at runtime
 
 # Expose ports
 EXPOSE 8080 5432
