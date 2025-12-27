@@ -11,15 +11,21 @@ tasks:
       sudo -u postgres psql -c "CREATE DATABASE appdb;" || true
       sudo -u postgres psql -c "CREATE USER appuser WITH PASSWORD 'password';" || true
       sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;" || true
+      echo "Setting PostgreSQL schema permissions..."
+      sudo -u postgres psql -d appdb -c "GRANT ALL ON SCHEMA public TO appuser;"
+      sudo -u postgres psql -d appdb -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO appuser;"
+      sudo -u postgres psql -d appdb -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO appuser;"
+      sudo -u postgres psql -d appdb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO appuser;"
+      sudo -u postgres psql -d appdb -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO appuser;"
       cd /workspace/php-postgres-app
       echo "Initializing database..."
       export DB_HOST=localhost
       export DB_NAME=appdb
       export DB_USER=appuser
       export DB_PASSWORD=password
-      php src/init_db.php
+      php -d xdebug.mode=off src/init_db.php
       echo "Running migrations..."
-      php src/run_migration.php
+      php -d xdebug.mode=off src/run_migration.php
     command: |
       cd /workspace/php-postgres-app
       export DB_HOST=localhost
@@ -27,7 +33,7 @@ tasks:
       export DB_USER=appuser
       export DB_PASSWORD=password
       echo "Starting PHP server on port 8080..."
-      php -S 0.0.0.0:8080 -t src
+      php -d xdebug.mode=off -S 0.0.0.0:8080 -t src
 
 ports:
   - port: 8080
