@@ -1,19 +1,22 @@
 tasks:
-  - name: Start PHP PostgreSQL Application
+  - name: Start PostgreSQL
     init: |
       cd php-postgres-app
-      echo "Installing dependencies..."
-      docker-compose up -d
-      echo "Waiting for services to start..."
+      docker compose up -d db
+      echo "Waiting for PostgreSQL to start..."
       sleep 10
       echo "Initializing database..."
-      docker-compose exec -T web php /var/www/html/src/init_db.php
+      export DB_HOST=localhost
+      export DB_NAME=appdb
+      export DB_USER=appuser
+      export DB_PASSWORD=password
+      php src/init_db.php
       echo "Running migrations..."
-      docker-compose exec -T web php /var/www/html/src/run_migration.php
+      php src/run_migration.php
     command: |
       cd php-postgres-app
-      docker-compose up
-      gp preview --external $(gp url 8080)
+      echo "Starting PHP server..."
+      php -S 0.0.0.0:8080 -t src
 
 ports:
   - port: 8080
