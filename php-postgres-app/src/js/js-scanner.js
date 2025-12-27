@@ -37,7 +37,7 @@ function startBarcodeScanner() {
             focusMode: { ideal: "continuous" },
             advanced: [
                 { focusMode: "continuous" },
-                { focusDistance: { ideal: 0.3 } }
+                { focusDistance: { ideal: 0.1 } }
             ]
         }
     })
