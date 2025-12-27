@@ -4,6 +4,83 @@
 
 ## 環境構築
 
+### ローカル Windows 環境
+
+#### 1. 必要なソフトウェアのインストール
+
+**PHP 8.3 のインストール**
+
+1. https://windows.php.net/download/ から Thread Safe版をダウンロード
+2. `D:\programFile\php` などに解凍
+3. 環境変数 PATH に `D:\programFile\php` を追加
+4. `php.ini` を設定：
+   ```bash
+   cd D:\programFile\php
+   copy php.ini-development php.ini
+   ```
+5. `php.ini` を編集して以下を有効化：
+   ```ini
+   extension_dir = "D:\programFile\php\ext"
+   extension=pdo_pgsql
+   extension=pgsql
+   extension=openssl
+   extension=mbstring
+   ```
+
+**PostgreSQL のインストール**
+
+1. https://www.postgresql.org/download/windows/ からダウンロード
+2. インストール時にポート番号を確認（例: 5434）
+3. 環境変数 PATH に `C:\Program Files\PostgreSQL\16\bin` を追加
+
+#### 2. データベースのセットアップ
+
+PostgreSQL に接続してデータベースを作成：
+
+```bash
+# PostgreSQL に接続（ポート番号は環境に合わせて変更）
+psql -U postgres -h localhost -p 5434
+
+# 以下のSQLを実行
+CREATE DATABASE appdb;
+CREATE USER appuser WITH PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;
+
+# appdb に接続
+\c appdb
+
+# PostgreSQL 15以降で必要なスキーマ権限を付与
+GRANT ALL ON SCHEMA public TO appuser;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO appuser;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO appuser;
+
+# 終了
+\q
+```
+
+#### 3. アプリケーションの初期化と起動
+
+**データベースの初期化：**
+
+```bash
+cd php-postgres-app
+init_local.bat
+```
+
+**サーバーの起動：**
+
+```bash
+start_local.bat
+```
+
+ブラウザで `http://localhost:8080` にアクセスしてください。
+
+**注意：** ポート番号が 5434 以外の場合は、`init_local.bat` と `start_local.bat` 内の `DB_PORT` を変更してください。
+
+---
+
 ### Gitpod / Ona 環境
 
 このリポジトリは Gitpod と Ona の両方に対応しています。devcontainer の設定により、自動的に環境が構築されます。
@@ -18,6 +95,8 @@ https://gitpod.io/#https://github.com/daisuke410/php_app
 #### Ona 環境で起動
 
 Ona でリポジトリを開くと、自動的に devcontainer が起動し、PostgreSQL と PHP がセットアップされます。
+
+---
 
 ## 手動でサーバーを起動する場合
 
