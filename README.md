@@ -79,6 +79,45 @@ start_local.bat
 
 **注意：** ポート番号が 5434 以外の場合は、`init_local.bat` と `start_local.bat` 内の `DB_PORT` を変更してください。
 
+#### 4. 同じネットワークのiPhoneからアクセスする
+
+**WindowsのIPアドレスを確認：**
+
+```bash
+ipconfig /all
+```
+
+`IPv4 アドレス` を確認してください（例: `192.168.1.100`）
+
+**Windowsファイアウォールでポート8080を許可：**
+
+管理者権限でコマンドプロンプトを開き、以下を実行：
+
+```bash
+netsh advfirewall firewall add rule name="PHP Server 8080" dir=in action=allow protocol=TCP localport=8080
+```
+
+**iPhoneからアクセス：**
+
+iPhoneのSafariまたはChromeで以下のURLにアクセス：
+
+```
+http://[WindowsのIPアドレス]:8080
+```
+
+例: `http://192.168.1.100:8080`
+
+**トラブルシューティング：**
+
+アクセスできない場合は、以下を確認してください：
+
+1. WindowsとiPhoneが同じWi-Fiネットワークに接続されているか
+2. ファイアウォール規則が正しく追加されているか確認：
+   ```bash
+   netsh advfirewall firewall show rule name="PHP Server 8080"
+   ```
+3. PHPサーバーが `0.0.0.0:8080` で起動しているか確認（`start_local.bat` 使用）
+
 ---
 
 ### Gitpod / Ona 環境
