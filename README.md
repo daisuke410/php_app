@@ -118,6 +118,33 @@ http://[WindowsのIPアドレス]:8080
    ```
 3. PHPサーバーが `0.0.0.0:8080` で起動しているか確認（`start_local.bat` 使用）
 
+#### 5. iPhoneでバーコードスキャナーを使う（HTTPS必須）
+
+**重要:** iPhoneのカメラを使用するには**HTTPS接続が必須**です。HTTPでは動作しません。
+
+**方法1: ngrok を使う（最も簡単）**
+
+1. https://ngrok.com/ からngrokをダウンロード
+2. PHPサーバーを起動：
+   ```bash
+   start_local.bat
+   ```
+3. 別のコマンドプロンプトでngrokを起動：
+   ```bash
+   ngrok http 8080
+   ```
+4. 表示されたHTTPS URL（例: `https://abcd1234.ngrok.io`）をiPhoneのブラウザで開く
+5. カメラが使用できます
+
+**方法2: ローカルネットワーク内でHTTPSを使う**
+
+PHPのビルトインサーバーはSSLをサポートしていないため、以下のいずれかが必要です：
+- **Laragon** を使用（Apache/nginxでSSL対応）
+- **XAMPP** を使用してSSLを設定
+- **Docker** を使用してnginx + SSL環境を構築
+
+推奨: 開発用途であれば**方法1のngrok**が最も簡単です
+
 ---
 
 ### Gitpod / Ona 環境
