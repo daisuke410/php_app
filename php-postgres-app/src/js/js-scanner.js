@@ -32,12 +32,28 @@ function startBarcodeScanner() {
     navigator.mediaDevices.getUserMedia({
         video: {
             facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 960 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            focusMode: { ideal: "continuous" },
+            advanced: [
+                { focusMode: "continuous" },
+                { focusDistance: { ideal: 0.3 } }
+            ]
         }
     })
     .then(function(stream) {
         video.srcObject = stream;
+
+        // オートフォーカスを有効化
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            track.applyConstraints({
+                advanced: [{ focusMode: 'continuous' }]
+            }).catch(err => console.log('Focus constraint error:', err));
+        }
+
         video.onloadedmetadata = function() {
             video.play();
             barcodeStreaming = true;
@@ -101,11 +117,11 @@ function detectBarcode() {
             halfSample: false
         },
         decoder: {
-            readers: ["ean_reader", "ean_8_reader"],
+            readers: ["ean_reader", "ean_8_reader", "code_128_reader"],
             multiple: false
         },
         locate: true,
-        frequency: 5
+        frequency: 10
     }, function(result) {
         if (result && result.codeResult) {
             const code = result.codeResult.code;
