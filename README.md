@@ -1,108 +1,140 @@
-# PHP + PostgreSQL Development Environment
+# PHP PostgreSQL Application
 
-このプロジェクトは、PHPとPostgreSQLを使った開発環境です。
+書籍と傘のレンタル管理システム
 
-## 環境構成
+## 環境構築
 
-- **PHP**: 8.3
-- **PostgreSQL**: 16
-- **拡張機能**: PDO, pdo_pgsql, pgsql, redis
+### Gitpod / Ona 環境
 
-## セットアップ手順
+このリポジトリは Gitpod と Ona の両方に対応しています。devcontainer の設定により、自動的に環境が構築されます。
 
-### 1. Dev Containerを起動
+#### Gitpod で起動
 
-VS Codeで:
-1. `F1`キーを押してコマンドパレットを開く
-2. "Dev Containers: Reopen in Container"を選択
-3. コンテナのビルドと起動を待つ
+以下のリンクからアクセス：
+```
+https://gitpod.io/#https://github.com/daisuke410/php_app
+```
 
-### 2. データベース接続テスト
+#### Ona 環境で起動
 
-コンテナ内のターミナルで:
+Ona でリポジトリを開くと、自動的に devcontainer が起動し、PostgreSQL と PHP がセットアップされます。
+
+## 手動でサーバーを起動する場合
+
+devcontainer 内で以下のコマンドを実行：
 
 ```bash
-php test_db.php
+cd /workspaces/php_app/php-postgres-app
+export DB_HOST=localhost
+export DB_NAME=appdb
+export DB_USER=appuser
+export DB_PASSWORD=password
+php -d xdebug.mode=off -S 0.0.0.0:8080 -t src
 ```
 
-成功すると、PostgreSQLへの接続が確認でき、サンプルデータが表示されます。
+ブラウザで `http://localhost:8080` にアクセスしてください。
 
-## データベース接続情報
+## データベースの初期化
 
-コンテナ内からの接続:
-- **Host**: `db`
-- **Port**: `5432`
-- **Database**: `appdb`
-- **User**: `postgres`
-- **Password**: `postgres`
-
-ホストマシンからの接続:
-- **Host**: `localhost`
-- **Port**: `5432`
-- その他は上記と同じ
-
-## 環境変数
-
-以下の環境変数が自動的に設定されています:
-
-```
-DB_HOST=db
-DB_PORT=5432
-DB_NAME=appdb
-DB_USER=postgres
-DB_PASSWORD=postgres
-```
-
-## PHPサーバーの起動
+データベースを再初期化する場合：
 
 ```bash
-# ビルトインサーバーを起動
-php -S 0.0.0.0:8080
+cd /workspaces/php_app/php-postgres-app
+export DB_HOST=localhost
+export DB_NAME=appdb
+export DB_USER=appuser
+export DB_PASSWORD=password
+php -d xdebug.mode=off src/init_db.php
+php -d xdebug.mode=off src/run_migration.php
 ```
 
-ブラウザで `http://localhost:8080` にアクセスできます。
+## PostgreSQL の設定
 
-## PostgreSQLクライアントツール
-
-### psqlコマンド
+### データベースに接続
 
 ```bash
-psql -h db -U postgres -d appdb
+psql -U appuser -d appdb -h localhost
+# パスワード: password
 ```
 
-### VS Code拡張機能
+### 管理者として接続
 
-PostgreSQL Client拡張機能がインストールされているので、VS Code内でデータベースを管理できます。
+```bash
+psql -U postgres -h localhost
+```
 
 ## トラブルシューティング
 
-### データベースに接続できない
+### PHP スクリプトが応答しない場合
 
-1. PostgreSQLコンテナが起動しているか確認:
-   ```bash
-   docker compose ps
-   ```
+Xdebug が原因の可能性があります。すべての PHP コマンドに `-d xdebug.mode=off` オプションを追加してください。
 
-2. ログを確認:
-   ```bash
-   docker compose logs db
-   ```
+### データベース権限エラー
 
-### コンテナを再起動
+PostgreSQL 15 以降では、スキーマ権限の設定が必要です：
 
 ```bash
-# Dev Containerを再構築
-# VS CodeのコマンドパレットでF1 → "Dev Containers: Rebuild Container"
+psql -U postgres -h localhost
 ```
+
+PostgreSQL 内で：
+
+```sql
+\c appdb
+GRANT ALL ON SCHEMA public TO appuser;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO appuser;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO appuser;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO appuser;
+\q
+```
+
+### テーブルが存在しないエラー
+
+データベースを初期化してください：
+
+```bash
+php -d xdebug.mode=off src/init_db.php
+php -d xdebug.mode=off src/run_migration.php
+```
+
+## 技術スタック
+
+- PHP 8.3
+- PostgreSQL 15+
+- PDO (PostgreSQL 拡張)
+- Vanilla JavaScript
+- CSS
 
 ## ディレクトリ構造
 
 ```
-.
-├── .devcontainer/
-│   ├── devcontainer.json    # Dev Container設定
-│   ├── docker-compose.yml   # Docker Compose設定
-│   └── Dockerfile           # PHPコンテナのカスタマイズ
-├── test_db.php             # データベース接続テスト
-└── README.md               # このファイル
+php-postgres-app/
+├── src/
+│   ├── api.php              # REST API エンドポイント
+│   ├── db.php               # データベース接続設定
+│   ├── init_db.php          # データベース初期化スクリプト
+│   ├── run_migration.php    # マイグレーション実行
+│   ├── index.html           # メインページ
+│   ├── login.html           # ログインページ
+│   └── js-*.js              # JavaScript ファイル
+├── init.sql                 # データベーススキーマ
+└── .devcontainer/
+    ├── devcontainer.json    # Devcontainer 設定
+    └── Dockerfile.combined  # Docker イメージ定義
 ```
+
+## 機能
+
+- ユーザー認証（ログイン/ログアウト）
+- 書籍管理
+  - 書籍の登録
+  - 書籍の貸出・返却
+  - 書籍のレビュー
+- 傘管理
+  - 傘の登録
+  - 傘の貸出・返却
+
+## ライセンス
+
+MIT
