@@ -1,7 +1,8 @@
 {
-    "name": "PHP & PostgreSQL DevContainer",
-    "dockerComposeFile": "../docker-compose.yml",
-    "service": "php",
+    "name": "PHP & PostgreSQL Integrated Container",
+    "build": {
+        "dockerfile": "Dockerfile.combined"
+    },
     "workspaceFolder": "/workspace",
 
     "customizations": {
@@ -15,9 +16,9 @@
         }
     },
 
-    "forwardPorts": [8000, 5432],
+    "forwardPorts": [8080, 5432],
 
-    "postCreateCommand": "cd /workspace && php init_db.php && php run_migration.php",
+    "postCreateCommand": "service postgresql start && sleep 5 && cd /workspace && php init_db.php && php run_migration.php",
 
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
@@ -26,5 +27,7 @@
             "uid": "1000",
             "gid": "1000"
         }
-    }
+    },
+
+    "remoteUser": "root"
 }
