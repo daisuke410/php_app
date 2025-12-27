@@ -1,0 +1,41 @@
+tasks:
+  - name: Start PHP PostgreSQL Application
+    init: |
+      cd php-postgres-app
+      echo "Installing dependencies..."
+      docker-compose up -d
+      echo "Waiting for services to start..."
+      sleep 10
+      echo "Initializing database..."
+      docker-compose exec -T web php /var/www/html/src/init_db.php
+      echo "Running migrations..."
+      docker-compose exec -T web php /var/www/html/src/run_migration.php
+    command: |
+      cd php-postgres-app
+      docker-compose up
+      gp preview --external $(gp url 8080)
+
+ports:
+  - port: 8080
+    onOpen: open-preview
+    visibility: public
+  - port: 5432
+    onOpen: ignore
+    visibility: private
+
+vscode:
+  extensions:
+    - felixfbecker.php-intellisense
+    - bmewburn.vscode-intelephense-client
+    - cweijan.vscode-postgresql-client2
+    - ms-azuretools.vscode-docker
+
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    pullRequestsFromForks: false
+    addCheck: true
+    addComment: false
+    addBadge: false
