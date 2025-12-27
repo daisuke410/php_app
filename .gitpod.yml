@@ -1,10 +1,17 @@
+image:
+  file: php-postgres-app/.devcontainer/Dockerfile.combined
+
 tasks:
-  - name: Start PostgreSQL
+  - name: Start PostgreSQL and PHP Server
     init: |
-      cd php-postgres-app
-      docker compose up -d db
-      echo "Waiting for PostgreSQL to start..."
-      sleep 10
+      echo "Starting PostgreSQL service..."
+      sudo service postgresql start
+      sleep 5
+      echo "Creating database and user..."
+      sudo -u postgres psql -c "CREATE DATABASE appdb;" || true
+      sudo -u postgres psql -c "CREATE USER appuser WITH PASSWORD 'password';" || true
+      sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;" || true
+      cd /workspace/php-postgres-app
       echo "Initializing database..."
       export DB_HOST=localhost
       export DB_NAME=appdb
@@ -14,8 +21,12 @@ tasks:
       echo "Running migrations..."
       php src/run_migration.php
     command: |
-      cd php-postgres-app
-      echo "Starting PHP server..."
+      cd /workspace/php-postgres-app
+      export DB_HOST=localhost
+      export DB_NAME=appdb
+      export DB_USER=appuser
+      export DB_PASSWORD=password
+      echo "Starting PHP server on port 8080..."
       php -S 0.0.0.0:8080 -t src
 
 ports:
